@@ -33,6 +33,9 @@ namespace PstSearchTool.Config
 
         public bool HintShown;
 
+        /// <summary>主題："light" / "dark"</summary>
+        public string Theme = "light";
+
         public string DbPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "PstSearchTool", "index.db");

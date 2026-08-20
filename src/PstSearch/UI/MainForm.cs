@@ -59,6 +59,7 @@ namespace PstSearchTool.UI
         private string _currentTreeStoreId = "";
         private SplitContainer _sc;
         private float _dpiScale = 1f;
+        private Button _btnTheme;
 
         public MainForm()
         {
@@ -92,12 +93,13 @@ namespace PstSearchTool.UI
             _txtDir = new TextBox { Left = 370, Top = 8, Width = 400, ReadOnly = true };
             _btnBrowseDir = new Button { Text = "瀏覽…", Left = 778, Top = 6, Width = 76 };
             _btnRefreshStores = new Button { Text = "重新整理來源", Left = 862, Top = 6, Width = 110 };
+            _btnTheme = new Button { Text = "深色模式", Left = 980, Top = 6, Width = 100, Anchor = AnchorStyles.Top | AnchorStyles.Right };
             var lblHint = new Label
             {
                 Text = "外掛 PST 會加入 Outlook 設定檔以建立索引與開啟郵件（之後可於 Outlook「檔案→資料檔管理」移除）。",
                 Left = 10, Top = 36, AutoSize = true, ForeColor = Color.Gray
             };
-            pnlTop.Controls.AddRange(new Control[] { _rbCurrentPst, _rbExternalPst, _txtDir, _btnBrowseDir, _btnRefreshStores, lblHint });
+            pnlTop.Controls.AddRange(new Control[] { _rbCurrentPst, _rbExternalPst, _txtDir, _btnBrowseDir, _btnRefreshStores, _btnTheme, lblHint });
 
             // --- 主分割（分隔距離與最小尺寸需於表單配置完成後設定，見 OnLoad）---
             _sc = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Vertical };
@@ -132,13 +134,13 @@ namespace PstSearchTool.UI
             _btnSearch = new Button { Text = "搜尋", Left = 400, Top = 30, Width = 90 };
             _btnClearSearch = new Button { Text = "清除", Left = 498, Top = 30, Width = 70 };
             _chkDate = new CheckBox { Text = "日期：", Left = 10, Top = 64, AutoSize = true };
-            _dtFrom = new DateTimePicker { Left = 82, Top = 62, Width = 125, Format = DateTimePickerFormat.Short };
-            var lblDash = new Label { Text = "～", Left = 212, Top = 66, AutoSize = true };
-            _dtTo = new DateTimePicker { Left = 230, Top = 62, Width = 125, Format = DateTimePickerFormat.Short };
+            _dtFrom = new DateTimePicker { Left = 85, Top = 62, Width = 145, Format = DateTimePickerFormat.Custom, CustomFormat = "yyyy/MM/dd" };
+            var lblDash = new Label { Text = "～", Left = 236, Top = 66, AutoSize = true };
+            _dtTo = new DateTimePicker { Left = 254, Top = 62, Width = 145, Format = DateTimePickerFormat.Custom, CustomFormat = "yyyy/MM/dd" };
             var lblSender = new Label { Text = "寄件者：", Left = 10, Top = 96, AutoSize = true };
-            _txtSender = new TextBox { Left = 80, Top = 94, Width = 230 };
-            var lblFolderF = new Label { Text = "資料夾：", Left = 330, Top = 96, AutoSize = true };
-            _cmbFolderFilter = new ComboBox { Left = 395, Top = 94, Width = 160, DropDownStyle = ComboBoxStyle.DropDownList };
+            _txtSender = new TextBox { Left = 85, Top = 94, Width = 240 };
+            var lblFolderF = new Label { Text = "資料夾：", Left = 345, Top = 96, AutoSize = true };
+            _cmbFolderFilter = new ComboBox { Left = 410, Top = 94, Width = 160, DropDownStyle = ComboBoxStyle.DropDownList };
             _cmbFolderFilter.Items.AddRange(new object[] { "全部資料夾", "收件匣", "寄件匣", "自訂（左側勾選）" });
             pnlSearch.Controls.AddRange(new Control[] { lblKw, _txtKeyword, _btnSearch, _btnClearSearch, _chkDate, _dtFrom, lblDash, _dtTo, lblSender, _txtSender, lblFolderF, _cmbFolderFilter });
 
@@ -183,6 +185,7 @@ namespace PstSearchTool.UI
             _rbExternalPst.CheckedChanged += SourceModeChanged;
             _btnBrowseDir.Click += BtnBrowseDir_Click;
             _btnRefreshStores.Click += (s, e) => RefreshStores();
+            _btnTheme.Click += BtnTheme_Click;
             _lvStores.ItemSelectionChanged += LvStores_ItemSelectionChanged;
             _tvFolders.AfterCheck += TvFolders_AfterCheck;
             _btnInbox.Click += (s, e) => CheckKindOnly("inbox");
@@ -271,6 +274,11 @@ namespace PstSearchTool.UI
                 else _dtTo.Value = DateTime.Today;
 
                 if (_db != null) _lblStatus.Text = "已索引 " + _db.CountMessages() + " 封郵件。";
+
+                // 套用主題
+                Theme.Apply(this, _settings.Theme == "dark");
+                _btnTheme.Text = Theme.IsDark ? "淺色模式" : "深色模式";
+
                 StartupLog.Log("OnLoad 完成");
             }
             catch (Exception ex)
@@ -312,6 +320,16 @@ namespace PstSearchTool.UI
         }
 
         // ------------------------------------------------------------------ 來源與資料夾
+        private void BtnTheme_Click(object sender, EventArgs e)
+        {
+            bool dark = !Theme.IsDark;
+            Theme.Apply(this, dark);
+            _btnTheme.Text = dark ? "淺色模式" : "深色模式";
+            _settings.Theme = dark ? "dark" : "light";
+            Settings.Save(_settings);
+            StartupLog.Log("切換主題：" + (dark ? "深色" : "淺色"));
+        }
+
         private void SourceModeChanged(object sender, EventArgs e)
         {
             if (_suppressSource) return;
