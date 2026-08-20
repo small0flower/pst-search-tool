@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using PstSearchTool.Config;
 using PstSearchTool.Data;
+using PstSearchTool.Diagnostics;
 using PstSearchTool.Indexing;
 using PstSearchTool.Models;
 using PstSearchTool.Outlook;
@@ -59,8 +60,11 @@ namespace PstSearchTool.UI
 
         public MainForm()
         {
+            StartupLog.Log("MainForm 建構開始");
             BuildUi();
+            StartupLog.Log("BuildUi 完成");
             Load += OnLoad;
+            Shown += OnShown;
             FormClosing += OnFormClosing;
         }
 
@@ -198,43 +202,65 @@ namespace PstSearchTool.UI
         // ------------------------------------------------------------------ 生命週期
         private void OnLoad(object sender, EventArgs e)
         {
-            try { _db = new IndexStore(_settings.DbPath); }
+            StartupLog.Log("OnLoad 開始");
+            try
+            {
+                StartupLog.Log("開啟索引資料庫：" + _settings.DbPath);
+                _db = new IndexStore(_settings.DbPath);
+                StartupLog.Log("索引資料庫開啟成功");
+            }
             catch (Exception ex)
             {
+                StartupLog.LogException("開啟索引資料庫失敗", ex);
                 MessageBox.Show(this, "無法開啟索引資料庫：\n" + ex.Message + "\n\n請確認磁碟空間與寫入權限。", "錯誤",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
                 _btnIndex.Enabled = _btnRebuild.Enabled = _btnSearch.Enabled = false;
             }
 
-            if (_settings.WindowW > 0)
+            try
             {
-                StartPosition = FormStartPosition.Manual;
-                SetBounds(_settings.WindowX, _settings.WindowY, _settings.WindowW, _settings.WindowH, BoundsSpecified.All);
-                if (_settings.WindowMaximized) WindowState = FormWindowState.Maximized;
+                if (_settings.WindowW > 0)
+                {
+                    StartPosition = FormStartPosition.Manual;
+                    SetBounds(_settings.WindowX, _settings.WindowY, _settings.WindowW, _settings.WindowH, BoundsSpecified.All);
+                    if (_settings.WindowMaximized) WindowState = FormWindowState.Maximized;
+                }
+
+                _suppressSource = true;
+                if (_settings.SourceMode == 1) _rbExternalPst.Checked = true;
+                else _rbCurrentPst.Checked = true;
+                _suppressSource = false;
+                UpdateSourceControls();
+
+                _cmbFolderFilter.SelectedIndex = 0;
+                _txtKeyword.Text = _settings.LastKeyword;
+                _txtSender.Text = _settings.SenderFilter;
+                _chkDate.Checked = _settings.DateFilterEnabled;
+                DateTime df, dt;
+                if (DateTime.TryParse(_settings.DateFrom, out df) && df != DateTime.MinValue) _dtFrom.Value = df;
+                else _dtFrom.Value = DateTime.Today.AddMonths(-3);
+                if (DateTime.TryParse(_settings.DateTo, out dt) && dt != DateTime.MinValue) _dtTo.Value = dt;
+                else _dtTo.Value = DateTime.Today;
+
+                if (_db != null) _lblStatus.Text = "已索引 " + _db.CountMessages() + " 封郵件。";
+                StartupLog.Log("OnLoad 完成");
             }
+            catch (Exception ex)
+            {
+                StartupLog.LogException("OnLoad 後段例外", ex);
+            }
+        }
 
-            _suppressSource = true;
-            if (_settings.SourceMode == 1) _rbExternalPst.Checked = true;
-            else _rbCurrentPst.Checked = true;
-            _suppressSource = false;
-            UpdateSourceControls();
-
-            _cmbFolderFilter.SelectedIndex = 0;
-            _txtKeyword.Text = _settings.LastKeyword;
-            _txtSender.Text = _settings.SenderFilter;
-            _chkDate.Checked = _settings.DateFilterEnabled;
-            DateTime df, dt;
-            if (DateTime.TryParse(_settings.DateFrom, out df) && df != DateTime.MinValue) _dtFrom.Value = df;
-            else _dtFrom.Value = DateTime.Today.AddMonths(-3);
-            if (DateTime.TryParse(_settings.DateTo, out dt) && dt != DateTime.MinValue) _dtTo.Value = dt;
-            else _dtTo.Value = DateTime.Today;
-
+        /// <summary>視窗已顯示後才載入郵件來源（避免 COM 呼叫阻塞視窗顯示）。</summary>
+        private void OnShown(object sender, EventArgs e)
+        {
+            StartupLog.Log("視窗已顯示，開始載入郵件來源");
             RefreshStores();
-            if (_db != null) _lblStatus.Text = "已索引 " + _db.CountMessages() + " 封郵件。";
         }
 
         private void OnFormClosing(object sender, FormClosingEventArgs e)
         {
+            StartupLog.Log("程式關閉中");
             SaveCurrentTreeChecks();
             _settings.LastKeyword = _txtKeyword.Text;
             _settings.SenderFilter = _txtSender.Text;
@@ -323,12 +349,14 @@ namespace PstSearchTool.UI
 
         private void RefreshStores()
         {
+            StartupLog.Log("RefreshStores 開始（模式：" + (_rbExternalPst.Checked ? "外掛 PST" : "目前 PST") + "）");
             SetBusy(true, "正在讀取 Outlook 郵件來源…");
             Task.Run(() =>
             {
                 try
                 {
                     List<StoreInfo> all = OutlookService.GetStores();
+                    StartupLog.Log("GetStores 回傳 " + all.Count + " 個存放區");
                     List<StoreInfo> shown;
                     if (_rbExternalPst.Checked && _settings.ExternalPstFiles.Count > 0)
                         shown = all.Where(s => _settings.ExternalPstFiles.Any(f => PathEquals(f, s.FilePath))).ToList();
@@ -359,6 +387,7 @@ namespace PstSearchTool.UI
                 }
                 catch (Exception ex)
                 {
+                    StartupLog.LogException("RefreshStores 失敗", ex);
                     Ui(() => { Err("讀取 Outlook 失敗：" + ex.Message); SetBusy(false, "就緒"); });
                 }
             });
