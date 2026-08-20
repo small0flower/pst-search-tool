@@ -16,6 +16,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- dynamic（Outlook COM 晚期繫結）需要 Microsoft.CSharp -->
+    <Reference Include="Microsoft.CSharp" />
     <!-- 讓 net48 在沒有本機 targeting pack 的機器（如 CI）也能建置 -->
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="All" />
     <!-- SQLite（自建倒排索引僅需標準功能），x86 原生檔自動隨輸出複製 -->
