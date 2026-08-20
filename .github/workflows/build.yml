@@ -1,0 +1,38 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build (x86, .NET Framework 4.8)
+        run: dotnet build src/PstSearch/PstSearch.csproj -c Release -p:Platform=AnyCPU
+
+      - name: Collect output
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Copy-Item src/PstSearch/bin/Release/net48/* dist -Recurse -Force
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+
+      - name: Compile installer
+        run: |
+          $iscc = 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
+          & $iscc 'build\installer.iss'
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: PstSearchTool-v1.0.0
+          path: dist/
