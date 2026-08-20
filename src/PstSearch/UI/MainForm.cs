@@ -79,7 +79,8 @@ namespace PstSearchTool.UI
         // ------------------------------------------------------------------ UI 建置
         private void BuildUi()
         {
-            Text = "Outlook PST 搜尋工具";
+            var ver = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+            Text = "Outlook PST 搜尋工具 v" + (ver == null ? "1.0.1" : ver.ToString(3));
             Font = new Font("Microsoft JhengHei", 9F);
             Size = new Size(1180, 760);
             MinimumSize = new Size(940, 620);
