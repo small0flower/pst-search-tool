@@ -58,12 +58,18 @@ namespace PstSearchTool.UI
         private bool _suppressSource;
         private string _currentTreeStoreId = "";
         private SplitContainer _sc;
+        private float _dpiScale = 1f;
 
         public MainForm()
         {
             StartupLog.Log("MainForm 建構開始");
+            _dpiScale = UiScale.Factor(this);
+            Font = new Font("Microsoft JhengHei", 9.5f * _dpiScale);
+            Size = UiScale.ScaleSize(new Size(1180, 760), _dpiScale);
+            MinimumSize = UiScale.ScaleSize(new Size(940, 620), _dpiScale);
             BuildUi();
-            StartupLog.Log("BuildUi 完成");
+            UiScale.ScaleTree(this, _dpiScale);
+            StartupLog.Log("BuildUi 完成（DPI 縮放：" + _dpiScale.ToString("0.00") + "）");
             Load += OnLoad;
             Shown += OnShown;
             FormClosing += OnFormClosing;
@@ -225,13 +231,23 @@ namespace PstSearchTool.UI
                     SetBounds(_settings.WindowX, _settings.WindowY, _settings.WindowW, _settings.WindowH, BoundsSpecified.All);
                     if (_settings.WindowMaximized) WindowState = FormWindowState.Maximized;
                 }
+                // 視窗不得超出螢幕工作區（高 DPI 縮放後可能超過）
+                try
+                {
+                    var wa = Screen.FromControl(this).WorkingArea;
+                    if (Width > wa.Width - 20) Width = wa.Width - 20;
+                    if (Height > wa.Height - 40) Height = wa.Height - 40;
+                    if (Left < wa.Left) Left = wa.Left;
+                    if (Top < wa.Top) Top = wa.Top;
+                }
+                catch { }
 
                 // SplitContainer 需於表單完成配置後才設定分隔距離（建構時寬度為 0 會拋例外）
                 try
                 {
-                    _sc.SplitterDistance = 380;
-                    _sc.Panel1MinSize = 300;
-                    _sc.Panel2MinSize = 520;
+                    _sc.SplitterDistance = (int)Math.Round(380 * _dpiScale);
+                    _sc.Panel1MinSize = (int)Math.Round(300 * _dpiScale);
+                    _sc.Panel2MinSize = (int)Math.Round(520 * _dpiScale);
                 }
                 catch (Exception ex)
                 {

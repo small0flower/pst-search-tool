@@ -13,12 +13,13 @@ namespace PstSearchTool.UI
 
         public CheckedListDialog(IEnumerable<string> items, string title, string prompt)
         {
+            float s = UiScale.Factor(this);
             Text = title;
-            Width = 560;
-            Height = 460;
-            MinimumSize = new System.Drawing.Size(420, 300);
+            Width = (int)Math.Round(560 * s);
+            Height = (int)Math.Round(460 * s);
+            MinimumSize = UiScale.ScaleSize(new Size(420, 300), s);
             StartPosition = FormStartPosition.CenterParent;
-            Font = new System.Drawing.Font("Microsoft JhengHei", 9F);
+            Font = new Font("Microsoft JhengHei", 9F * s);
 
             var lbl = new Label
             {
@@ -52,6 +53,7 @@ namespace PstSearchTool.UI
             Controls.Add(_list);
             Controls.Add(ok);
             Controls.Add(cancel);
+            UiScale.ScaleTree(this, s);
             AcceptButton = ok;
             CancelButton = cancel;
         }
