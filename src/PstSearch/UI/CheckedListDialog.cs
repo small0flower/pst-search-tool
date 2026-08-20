@@ -47,11 +47,11 @@ namespace PstSearchTool.UI
                 Text = "全不選", Left = 278, Top = 372, Width = 70,
                 Anchor = AnchorStyles.Bottom | AnchorStyles.Right
             };
-            btnAll.Click += (s, e) =>
+            btnAll.Click += (sender, e) =>
             {
                 for (int i = 0; i < _list.Items.Count; i++) _list.SetItemChecked(i, true);
             };
-            btnNone.Click += (s, e) =>
+            btnNone.Click += (sender, e) =>
             {
                 for (int i = 0; i < _list.Items.Count; i++) _list.SetItemChecked(i, false);
             };
