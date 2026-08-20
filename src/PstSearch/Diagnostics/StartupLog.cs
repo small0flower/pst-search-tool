@@ -20,8 +20,10 @@ namespace PstSearchTool.Diagnostics
                     Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PstSearchTool");
                 Directory.CreateDirectory(dir);
                 _path = Path.Combine(dir, "startup.log");
+                // UTF-8 含 BOM：讓 PowerShell/記事本都能正確顯示中文
                 File.AppendAllText(_path,
-                    Environment.NewLine + "===== 程式啟動 " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " =====" + Environment.NewLine);
+                    Environment.NewLine + "===== 程式啟動 " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " =====" + Environment.NewLine,
+                    new System.Text.UTF8Encoding(true));
             }
             catch { }
         }
@@ -33,7 +35,8 @@ namespace PstSearchTool.Diagnostics
                 if (_path == null) return;
                 lock (Sync)
                 {
-                    File.AppendAllText(_path, DateTime.Now.ToString("HH:mm:ss.fff") + "  " + message + Environment.NewLine);
+                    File.AppendAllText(_path, DateTime.Now.ToString("HH:mm:ss.fff") + "  " + message + Environment.NewLine,
+                        new System.Text.UTF8Encoding(true));
                 }
             }
             catch { }

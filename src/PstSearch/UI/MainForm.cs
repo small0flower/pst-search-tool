@@ -57,6 +57,7 @@ namespace PstSearchTool.UI
         private bool _busy;
         private bool _suppressSource;
         private string _currentTreeStoreId = "";
+        private SplitContainer _sc;
 
         public MainForm()
         {
@@ -92,9 +93,9 @@ namespace PstSearchTool.UI
             };
             pnlTop.Controls.AddRange(new Control[] { _rbCurrentPst, _rbExternalPst, _txtDir, _btnBrowseDir, _btnRefreshStores, lblHint });
 
-            // --- 主分割 ---
-            var sc = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Vertical, SplitterDistance = 380, Panel1MinSize = 300, Panel2MinSize = 520 };
-            sc.SplitterWidth = 5;
+            // --- 主分割（分隔距離與最小尺寸需於表單配置完成後設定，見 OnLoad）---
+            _sc = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Vertical };
+            _sc.SplitterWidth = 5;
 
             // ==== 左側：存放區 + 資料夾 ====
             var lblStores = new Label { Text = "2. 郵件來源（勾選要索引的）", Left = 10, Top = 8, AutoSize = true, Font = new Font(Font, FontStyle.Bold) };
@@ -117,8 +118,7 @@ namespace PstSearchTool.UI
                 Left = 10, Top = 246, Width = 360, CheckBoxes = true, HideSelection = false,
                 Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
             };
-            sc.Panel1.Controls.AddRange(new Control[] { lblStores, _lvStores, lblFolders, _btnInbox, _btnSent, _btnAllFolders, _btnClearFolders, _tvFolders });
-
+            _sc.Panel1.Controls.AddRange(new Control[] { lblStores, _lvStores, lblFolders, _btnInbox, _btnSent, _btnAllFolders, _btnClearFolders, _tvFolders });
             // ==== 右側：搜尋 + 結果 ====
             var pnlSearch = new Panel { Dock = DockStyle.Top, Height = 118 };
             var lblKw = new Label { Text = "4. 搜尋條件", Left = 10, Top = 8, AutoSize = true, Font = new Font(Font, FontStyle.Bold) };
@@ -165,11 +165,11 @@ namespace PstSearchTool.UI
             var c5 = new DataGridViewTextBoxColumn { HeaderText = "存放區", Width = 90, SortMode = DataGridViewColumnSortMode.NotSortable };
             _grid.Columns.AddRange(new DataGridViewColumn[] { c0, c1, c2, c3, c4, c5 });
 
-            sc.Panel2.Controls.Add(_grid);
-            sc.Panel2.Controls.Add(pnlSearch);
-            sc.Panel2.Controls.Add(pnlBottom);
+            _sc.Panel2.Controls.Add(_grid);
+            _sc.Panel2.Controls.Add(pnlSearch);
+            _sc.Panel2.Controls.Add(pnlBottom);
 
-            Controls.Add(sc);
+            Controls.Add(_sc);
             Controls.Add(pnlTop);
 
             // --- 事件 ---
@@ -224,6 +224,18 @@ namespace PstSearchTool.UI
                     StartPosition = FormStartPosition.Manual;
                     SetBounds(_settings.WindowX, _settings.WindowY, _settings.WindowW, _settings.WindowH, BoundsSpecified.All);
                     if (_settings.WindowMaximized) WindowState = FormWindowState.Maximized;
+                }
+
+                // SplitContainer 需於表單完成配置後才設定分隔距離（建構時寬度為 0 會拋例外）
+                try
+                {
+                    _sc.SplitterDistance = 380;
+                    _sc.Panel1MinSize = 300;
+                    _sc.Panel2MinSize = 520;
+                }
+                catch (Exception ex)
+                {
+                    StartupLog.LogException("設定 SplitContainer 失敗", ex);
                 }
 
                 _suppressSource = true;
