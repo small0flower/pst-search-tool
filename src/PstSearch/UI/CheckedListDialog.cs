@@ -37,6 +37,24 @@ namespace PstSearchTool.UI
             };
             foreach (var it in items) _list.Items.Add(it, true);
 
+            var btnAll = new Button
+            {
+                Text = "全選", Left = 200, Top = 372, Width = 70,
+                Anchor = AnchorStyles.Bottom | AnchorStyles.Right
+            };
+            var btnNone = new Button
+            {
+                Text = "全不選", Left = 278, Top = 372, Width = 70,
+                Anchor = AnchorStyles.Bottom | AnchorStyles.Right
+            };
+            btnAll.Click += (s, e) =>
+            {
+                for (int i = 0; i < _list.Items.Count; i++) _list.SetItemChecked(i, true);
+            };
+            btnNone.Click += (s, e) =>
+            {
+                for (int i = 0; i < _list.Items.Count; i++) _list.SetItemChecked(i, false);
+            };
             var ok = new Button
             {
                 Text = "確定", Left = 350, Top = 372, Width = 90,
@@ -52,6 +70,8 @@ namespace PstSearchTool.UI
 
             Controls.Add(lbl);
             Controls.Add(_list);
+            Controls.Add(btnAll);
+            Controls.Add(btnNone);
             Controls.Add(ok);
             Controls.Add(cancel);
             UiScale.ScaleTree(this, s);

@@ -126,19 +126,19 @@ namespace PstSearchTool.UI
             };
             _sc.Panel1.Controls.AddRange(new Control[] { lblStores, _lvStores, lblFolders, _btnInbox, _btnSent, _btnAllFolders, _btnClearFolders, _tvFolders });
             // ==== 右側：搜尋 + 結果 ====
-            var pnlSearch = new Panel { Dock = DockStyle.Top, Height = 118 };
+            var pnlSearch = new Panel { Dock = DockStyle.Top, Height = 124 };
             var lblKw = new Label { Text = "4. 搜尋條件", Left = 10, Top = 8, AutoSize = true, Font = new Font(Font, FontStyle.Bold) };
             _txtKeyword = new TextBox { Left = 10, Top = 32, Width = 380 };
             _btnSearch = new Button { Text = "搜尋", Left = 400, Top = 30, Width = 90 };
             _btnClearSearch = new Button { Text = "清除", Left = 498, Top = 30, Width = 70 };
             _chkDate = new CheckBox { Text = "日期：", Left = 10, Top = 64, AutoSize = true };
-            _dtFrom = new DateTimePicker { Left = 60, Top = 62, Width = 120, Format = DateTimePickerFormat.Short };
-            var lblDash = new Label { Text = "～", Left = 184, Top = 66, AutoSize = true };
-            _dtTo = new DateTimePicker { Left = 204, Top = 62, Width = 120, Format = DateTimePickerFormat.Short };
-            var lblSender = new Label { Text = "寄件者：", Left = 10, Top = 92, AutoSize = true };
-            _txtSender = new TextBox { Left = 70, Top = 90, Width = 220 };
-            var lblFolderF = new Label { Text = "資料夾：", Left = 310, Top = 92, AutoSize = true };
-            _cmbFolderFilter = new ComboBox { Left = 370, Top = 90, Width = 160, DropDownStyle = ComboBoxStyle.DropDownList };
+            _dtFrom = new DateTimePicker { Left = 82, Top = 62, Width = 125, Format = DateTimePickerFormat.Short };
+            var lblDash = new Label { Text = "～", Left = 212, Top = 66, AutoSize = true };
+            _dtTo = new DateTimePicker { Left = 230, Top = 62, Width = 125, Format = DateTimePickerFormat.Short };
+            var lblSender = new Label { Text = "寄件者：", Left = 10, Top = 96, AutoSize = true };
+            _txtSender = new TextBox { Left = 80, Top = 94, Width = 230 };
+            var lblFolderF = new Label { Text = "資料夾：", Left = 330, Top = 96, AutoSize = true };
+            _cmbFolderFilter = new ComboBox { Left = 395, Top = 94, Width = 160, DropDownStyle = ComboBoxStyle.DropDownList };
             _cmbFolderFilter.Items.AddRange(new object[] { "全部資料夾", "收件匣", "寄件匣", "自訂（左側勾選）" });
             pnlSearch.Controls.AddRange(new Control[] { lblKw, _txtKeyword, _btnSearch, _btnClearSearch, _chkDate, _dtFrom, lblDash, _dtTo, lblSender, _txtSender, lblFolderF, _cmbFolderFilter });
 
