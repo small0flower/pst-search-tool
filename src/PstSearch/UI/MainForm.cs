@@ -252,33 +252,35 @@ namespace PstSearchTool.UI
 
             try
             {
-                if (_settings.WindowW > 0)
-                {
-                    StartPosition = FormStartPosition.Manual;
-                    // 舊版儲存的視窗大小未縮放；以邏輯單位 × DPI 比例還原，避免視窗過窄裁切右側 UI
-                    SetBounds(
-                        (int)Math.Round(_settings.WindowX * _dpiScale),
-                        (int)Math.Round(_settings.WindowY * _dpiScale),
-                        (int)Math.Round(_settings.WindowW * _dpiScale),
-                        (int)Math.Round(_settings.WindowH * _dpiScale),
-                        BoundsSpecified.All);
-                    if (_settings.WindowMaximized) WindowState = FormWindowState.Maximized;
-                }
-                // 視窗完全限制在螢幕工作區內（高 DPI 縮放或舊設定可能超出）
+                // 視窗尺寸：內容最小需求約 1000x620（邏輯單位），太小的舊設定直接改用
+                // 貼近螢幕的預設尺寸，確保右側搜尋/結果欄位不被裁切；並限制在工作區內、置中。
                 try
                 {
                     var wa = Screen.FromControl(this).WorkingArea;
-                    if (Width > wa.Width - 20) Width = wa.Width - 20;
-                    if (Height > wa.Height - 40) Height = wa.Height - 40;
-                    if (Width < MinimumSize.Width) Width = MinimumSize.Width;
-                    if (Height < MinimumSize.Height) Height = MinimumSize.Height;
-                    if (Left < wa.Left) Left = wa.Left;
-                    if (Top < wa.Top) Top = wa.Top;
-                    if (Right > wa.Right) Left = wa.Right - Width;
-                    if (Bottom > wa.Bottom) Top = wa.Bottom - Height;
+                    int defaultW = Math.Max(wa.Width - 40, 900);
+                    int defaultH = Math.Max(wa.Height - 80, 620);
+                    int w = defaultW, h = defaultH;
+                    if (_settings.WindowW > 0)
+                    {
+                        w = (int)Math.Round(_settings.WindowW * _dpiScale);
+                        h = (int)Math.Round(_settings.WindowH * _dpiScale);
+                        int minW = (int)Math.Round(1000 * _dpiScale);
+                        int minH = (int)Math.Round(620 * _dpiScale);
+                        if (w < minW || h < minH) { w = defaultW; h = defaultH; }
+                    }
+                    w = Math.Min(w, wa.Width - 20);
+                    h = Math.Min(h, wa.Height - 40);
+                    if (w < MinimumSize.Width && MinimumSize.Width <= wa.Width - 20) w = MinimumSize.Width;
+                    if (h < MinimumSize.Height && MinimumSize.Height <= wa.Height - 40) h = MinimumSize.Height;
+                    StartPosition = FormStartPosition.Manual;
+                    SetBounds(wa.Left + (wa.Width - w) / 2, wa.Top + (wa.Height - h) / 2, w, h, BoundsSpecified.All);
+                    if (_settings.WindowMaximized) WindowState = FormWindowState.Maximized;
                     StartupLog.Log("視窗位置：" + Left + "," + Top + " 尺寸：" + Width + "x" + Height + " 工作區：" + wa.Width + "x" + wa.Height);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    StartupLog.LogException("設定視窗尺寸失敗", ex);
+                }
 
                 // SplitContainer 需於表單完成配置後才設定分隔距離（建構時寬度為 0 會拋例外）
                 try
