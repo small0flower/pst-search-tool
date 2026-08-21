@@ -128,32 +128,53 @@ namespace PstSearchTool.UI
             };
             _sc.Panel1.Controls.AddRange(new Control[] { lblStores, _lvStores, lblFolders, _btnInbox, _btnSent, _btnAllFolders, _btnClearFolders, _tvFolders });
             // ==== 右側：搜尋 + 結果 ====
-            // 搜尋區採自動流式排版：控制項自動排列/換行，任何視窗尺寸下都不會被切掉或隱藏
-            var pnlSearch = new FlowLayoutPanel
+            // 搜尋區採固定高度表格排版（TableLayoutPanel）：4 列固定列高，
+            // 欄位放入指定格子，結構上不可能被切掉或消失。
+            var pnlSearch = new TableLayoutPanel
             {
                 Dock = DockStyle.Top,
-                AutoSize = true,
-                AutoSizeMode = AutoSizeMode.GrowAndShrink,
-                FlowDirection = FlowDirection.LeftToRight,
-                WrapContents = true,
-                Padding = new Padding(8, 6, 8, 6)
+                Height = 124,
+                ColumnCount = 4,
+                RowCount = 4,
+                Padding = new Padding(8, 4, 8, 2)
             };
+            pnlSearch.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
+            pnlSearch.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
+            pnlSearch.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
+            pnlSearch.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
+            pnlSearch.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            pnlSearch.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            pnlSearch.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            pnlSearch.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             _pnlSearch = pnlSearch;
-            var m = new Padding(4, 8, 4, 0);
-            var lblKw = new Label { Text = "4. 搜尋條件", AutoSize = true, Font = new Font(Font, FontStyle.Bold), Margin = m };
-            _txtKeyword = new TextBox { Width = 380, Margin = m };
-            _btnSearch = new Button { Text = "搜尋", Width = 90, Margin = m };
-            _btnClearSearch = new Button { Text = "清除", Width = 70, Margin = m };
-            _chkDate = new CheckBox { Text = "日期：", AutoSize = true, Margin = m };
-            _dtFrom = new DateTimePicker { Width = 145, Format = DateTimePickerFormat.Custom, CustomFormat = "yyyy/MM/dd", Margin = m };
-            var lblDash = new Label { Text = "～", AutoSize = true, Margin = m };
-            _dtTo = new DateTimePicker { Width = 145, Format = DateTimePickerFormat.Custom, CustomFormat = "yyyy/MM/dd", Margin = m };
-            var lblSender = new Label { Text = "寄件者：", AutoSize = true, Margin = m };
-            _txtSender = new TextBox { Width = 240, Margin = m };
-            var lblFolderF = new Label { Text = "資料夾：", AutoSize = true, Margin = m };
-            _cmbFolderFilter = new ComboBox { Width = 160, DropDownStyle = ComboBoxStyle.DropDownList, Margin = m };
+
+            var lblKw = new Label { Text = "4. 搜尋條件", AutoSize = true, Font = new Font(Font, FontStyle.Bold), Margin = new Padding(4, 4, 8, 0) };
+            _txtKeyword = new TextBox { Width = 380, Anchor = AnchorStyles.Left | AnchorStyles.Right, Margin = new Padding(4, 4, 8, 0) };
+            _btnSearch = new Button { Text = "搜尋", Width = 90, Margin = new Padding(4, 3, 8, 0) };
+            _btnClearSearch = new Button { Text = "清除", Width = 70, Margin = new Padding(0, 3, 8, 0) };
+            _chkDate = new CheckBox { Text = "日期：", AutoSize = true, Margin = new Padding(4, 4, 8, 0) };
+            _dtFrom = new DateTimePicker { Width = 145, Format = DateTimePickerFormat.Custom, CustomFormat = "yyyy/MM/dd", Margin = new Padding(4, 3, 8, 0) };
+            var lblDash = new Label { Text = "～", AutoSize = true, Margin = new Padding(0, 4, 8, 0) };
+            _dtTo = new DateTimePicker { Width = 145, Format = DateTimePickerFormat.Custom, CustomFormat = "yyyy/MM/dd", Margin = new Padding(0, 3, 8, 0) };
+            var lblSender = new Label { Text = "寄件者：", AutoSize = true, Margin = new Padding(4, 4, 8, 0) };
+            _txtSender = new TextBox { Width = 240, Anchor = AnchorStyles.Left | AnchorStyles.Right, Margin = new Padding(4, 4, 8, 0) };
+            var lblFolderF = new Label { Text = "資料夾：", AutoSize = true, Margin = new Padding(4, 4, 8, 0) };
+            _cmbFolderFilter = new ComboBox { Width = 160, DropDownStyle = ComboBoxStyle.DropDownList, Margin = new Padding(0, 4, 8, 0) };
             _cmbFolderFilter.Items.AddRange(new object[] { "全部資料夾", "收件匣", "寄件匣", "自訂（左側勾選）" });
-            pnlSearch.Controls.AddRange(new Control[] { lblKw, _txtKeyword, _btnSearch, _btnClearSearch, _chkDate, _dtFrom, lblDash, _dtTo, lblSender, _txtSender, lblFolderF, _cmbFolderFilter });
+
+            pnlSearch.Controls.Add(lblKw, 0, 0);
+            pnlSearch.SetColumnSpan(lblKw, 4);
+            pnlSearch.Controls.Add(_txtKeyword, 1, 1);
+            pnlSearch.Controls.Add(_btnSearch, 2, 1);
+            pnlSearch.Controls.Add(_btnClearSearch, 3, 1);
+            pnlSearch.Controls.Add(_chkDate, 0, 2);
+            pnlSearch.Controls.Add(_dtFrom, 1, 2);
+            pnlSearch.Controls.Add(lblDash, 2, 2);
+            pnlSearch.Controls.Add(_dtTo, 3, 2);
+            pnlSearch.Controls.Add(lblSender, 0, 3);
+            pnlSearch.Controls.Add(_txtSender, 1, 3);
+            pnlSearch.Controls.Add(lblFolderF, 2, 3);
+            pnlSearch.Controls.Add(_cmbFolderFilter, 3, 3);
 
             var pnlBottom = new Panel { Dock = DockStyle.Bottom, Height = 44 };
             _btnIndex = new Button { Text = "建立/更新索引", Left = 10, Top = 9, Width = 120 };
