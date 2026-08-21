@@ -37,7 +37,7 @@ jobs:
           name: PstSearchTool-v1.0.6
           path: dist/
 
-  # 在真實 Windows 上執行程式並截圖，commit 回 repo（公開 repo 可直接抓取檢視）
+  # 在真實 Windows 上執行程式、擷取應用程式視窗畫面，commit 回 repo（公開 repo 可直接抓取檢視）
   uitest:
     runs-on: windows-latest
     permissions:
@@ -57,17 +57,34 @@ jobs:
           New-Item -ItemType Directory -Force screenshots | Out-Null
           $app = Resolve-Path 'src/PstSearch/bin/Release/net48/PstSearchTool.exe'
           $p = Start-Process $app -ArgumentList '--uitest' -PassThru
-          Start-Sleep -Seconds 8
-          Add-Type -AssemblyName System.Windows.Forms
+          Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class W { [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h); [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr h, out R r); [StructLayout(LayoutKind.Sequential)] public struct R { public int L, T, Rt, B; } }'
+          Start-Sleep -Seconds 6
+          $p.Refresh()
+          $hwnd = $p.MainWindowHandle
+          for ($i = 0; $i -lt 20 -and $hwnd -eq 0; $i++) { Start-Sleep -Milliseconds 500; $p.Refresh(); $hwnd = $p.MainWindowHandle }
+          Write-Host "MainWindowHandle: $hwnd"
+          [W]::SetForegroundWindow($hwnd) | Out-Null
+          Start-Sleep -Seconds 1
           Add-Type -AssemblyName System.Drawing
-          $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
-          $bmp = New-Object System.Drawing.Bitmap($b.Width, $b.Height)
+          $r = New-Object W+R
+          [W]::GetWindowRect($hwnd, [ref]$r) | Out-Null
+          $w = $r.Rt - $r.L
+          $h = $r.B - $r.T
+          $ox = $r.L
+          $oy = $r.T
+          if ($w -lt 100 -or $h -lt 100) {
+            Add-Type -AssemblyName System.Windows.Forms
+            $sb = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+            $w = $sb.Width; $h = $sb.Height; $ox = $sb.X; $oy = $sb.Y
+          }
+          Write-Host "Capture: $ox,$oy ${w}x${h}"
+          $bmp = New-Object System.Drawing.Bitmap($w, $h)
           $g = [System.Drawing.Graphics]::FromImage($bmp)
-          $g.CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
+          $g.CopyFromScreen($ox, $oy, 0, 0, (New-Object System.Drawing.Size($w, $h)))
           $bmp.Save("screenshots/uitest.png")
           $g.Dispose(); $bmp.Dispose()
           Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
-          Write-Host "Screen: $($b.Width)x$($b.Height) saved"
+          Write-Host "Screenshot saved."
 
       - name: Commit screenshot to repo
         run: |
