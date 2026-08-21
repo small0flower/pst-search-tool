@@ -59,7 +59,6 @@ namespace PstSearchTool.UI
         private string _currentTreeStoreId = "";
         private SplitContainer _sc;
         private float _dpiScale = 1f;
-        private Button _btnTheme;
         private Panel _pnlSearch;
 
         public MainForm()
@@ -95,13 +94,12 @@ namespace PstSearchTool.UI
             _txtDir = new TextBox { Left = 370, Top = 8, Width = 400, ReadOnly = true };
             _btnBrowseDir = new Button { Text = "瀏覽…", Left = 778, Top = 6, Width = 76 };
             _btnRefreshStores = new Button { Text = "重新整理來源", Left = 862, Top = 6, Width = 110 };
-            _btnTheme = new Button { Text = "深色模式", Left = 980, Top = 6, Width = 100, Anchor = AnchorStyles.Top | AnchorStyles.Right };
             var lblHint = new Label
             {
                 Text = "外掛 PST 會加入 Outlook 設定檔以建立索引與開啟郵件（之後可於 Outlook「檔案→資料檔管理」移除）。",
                 Left = 10, Top = 36, AutoSize = true, ForeColor = Color.Gray
             };
-            pnlTop.Controls.AddRange(new Control[] { _rbCurrentPst, _rbExternalPst, _txtDir, _btnBrowseDir, _btnRefreshStores, _btnTheme, lblHint });
+            pnlTop.Controls.AddRange(new Control[] { _rbCurrentPst, _rbExternalPst, _txtDir, _btnBrowseDir, _btnRefreshStores, lblHint });
 
             // --- 主分割（分隔距離與最小尺寸需於表單配置完成後設定，見 OnLoad）---
             _sc = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Vertical };
@@ -187,12 +185,8 @@ namespace PstSearchTool.UI
             mExit.Click += (s, e) => Close();
             mFile.DropDownItems.Add(mExit);
             var mTools = new ToolStripMenuItem("工具");
-            var mTheme = new ToolStripMenuItem("切換深色模式");
-            mTheme.ShortcutKeys = Keys.Control | Keys.D;
-            mTheme.Click += (s, e) => BtnTheme_Click(s, e);
             var mRefresh = new ToolStripMenuItem("重新整理來源");
             mRefresh.Click += (s, e) => RefreshStores();
-            mTools.DropDownItems.Add(mTheme);
             mTools.DropDownItems.Add(mRefresh);
             var mHelp = new ToolStripMenuItem("說明");
             var mAbout = new ToolStripMenuItem("關於");
@@ -211,7 +205,6 @@ namespace PstSearchTool.UI
             _rbExternalPst.CheckedChanged += SourceModeChanged;
             _btnBrowseDir.Click += BtnBrowseDir_Click;
             _btnRefreshStores.Click += (s, e) => RefreshStores();
-            _btnTheme.Click += BtnTheme_Click;
             _lvStores.ItemSelectionChanged += LvStores_ItemSelectionChanged;
             _tvFolders.AfterCheck += TvFolders_AfterCheck;
             _btnInbox.Click += (s, e) => CheckKindOnly("inbox");
@@ -302,10 +295,6 @@ namespace PstSearchTool.UI
 
                 if (_db != null) _lblStatus.Text = "已索引 " + _db.CountMessages() + " 封郵件。";
 
-                // 套用主題
-                Theme.Apply(this, _settings.Theme == "dark");
-                _btnTheme.Text = Theme.IsDark ? "淺色模式" : "深色模式";
-
                 StartupLog.Log("OnLoad 完成");
             }
             catch (Exception ex)
@@ -368,8 +357,7 @@ namespace PstSearchTool.UI
             string msg = "Outlook PST 搜尋工具 v" + (ver == null ? "?" : ver.ToString(3)) + "\n\n"
                 + "DPI 縮放：" + _dpiScale.ToString("0.00") + "\n"
                 + "視窗：" + Width + " x " + Height + " @ " + Left + "," + Top + "（最大化：" + (WindowState == FormWindowState.Maximized) + "）\n"
-                + "螢幕工作區：" + wa.Width + " x " + wa.Height + "\n"
-                + "主題：" + (Theme.IsDark ? "深色" : "淺色") + "\n\n"
+                + "螢幕工作區：" + wa.Width + " x " + wa.Height + "\n\n"
                 + "--- 診斷 ---\n"
                 + "搜尋列：寬 " + (_pnlSearch != null ? _pnlSearch.Width.ToString() : "?") + " 高 " + (_pnlSearch != null ? _pnlSearch.Height.ToString() : "?") + "\n"
                 + "起始日期：" + _dtFrom.Left + "," + _dtFrom.Top + " " + _dtFrom.Width + "x" + _dtFrom.Height + " 可見:" + _dtFrom.Visible + "\n"
@@ -379,16 +367,6 @@ namespace PstSearchTool.UI
                 + "設定檔：" + System.IO.Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PstSearchTool", "config.xml");
             MessageBox.Show(this, msg, "關於", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        }
-
-        private void BtnTheme_Click(object sender, EventArgs e)
-        {
-            bool dark = !Theme.IsDark;
-            Theme.Apply(this, dark);
-            _btnTheme.Text = dark ? "淺色模式" : "深色模式";
-            _settings.Theme = dark ? "dark" : "light";
-            Settings.Save(_settings);
-            StartupLog.Log("切換主題：" + (dark ? "深色" : "淺色"));
         }
 
         private void SourceModeChanged(object sender, EventArgs e)
