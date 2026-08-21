@@ -30,7 +30,7 @@ Outlook 2007 的「即時搜尋」依賴舊版 Windows Desktop Search（WDS）�
 
 ## 快速開始
 
-1. 執行安裝程式 `PstSearchTool-Setup-1.0.5.exe`（或直接解壓縮 `dist` 內的檔案執行 `PstSearchTool.exe`）。
+1. 執行安裝程式 `PstSearchTool-Setup-1.0.6.exe`（或直接解壓縮 `dist` 內的檔案執行 `PstSearchTool.exe`）。
 2. **選擇來源**：預設「目前 Outlook 中的 PST」會列出 Outlook 設定檔內的存放區；或選「外掛 PST」→「瀏覽…」挑選 .pst 檔。
 3. **勾選來源與資料夾**：在左側勾選存放區（預設勾選主要信箱），點選存放區後在資料夾樹勾選要索引的資料夾（預設勾選收件匣、寄件匣）。
 4. 按 **「建立/更新索引」**，等待完成（首次建立大型 PST 可能需要一段時間；之後未變更的資料夾會自動略過，很快）。

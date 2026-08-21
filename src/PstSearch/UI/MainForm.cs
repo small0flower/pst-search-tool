@@ -218,9 +218,11 @@ namespace PstSearchTool.UI
             var c5 = new DataGridViewTextBoxColumn { HeaderText = "存放區", Width = 90, SortMode = DataGridViewColumnSortMode.NotSortable };
             _grid.Columns.AddRange(new DataGridViewColumn[] { c0, c1, c2, c3, c4, c5 });
 
-            _sc.Panel2.Controls.Add(_grid);
+            // 重要：Dock=Fill 的控制項必須「最後」加入 Panel2，
+            // 否則 Fill 會先佔滿整個面板，導致後加的 Top 搜尋列/底部列高度為 0 而消失。
             _sc.Panel2.Controls.Add(pnlSearch);
             _sc.Panel2.Controls.Add(pnlBottom);
+            _sc.Panel2.Controls.Add(_grid);
 
             // --- 頂端選單列（主題切換、重新整理、關於）---
             var menu = new MenuStrip();
