@@ -376,6 +376,7 @@ namespace PstSearchTool.UI
             {
                 StartupLog.Log("UI 測試模式：不連線 Outlook");
                 _lblStatus.Text = "UI 測試模式（未連線 Outlook）";
+                WriteUiTestDiag();
                 return;
             }
             StartupLog.Log("視窗已顯示，開始載入郵件來源");
@@ -410,6 +411,36 @@ namespace PstSearchTool.UI
                 _grid.SetBounds(0, sh, w, Math.Max(0, h - sh - bh));
             }
             catch { }
+        }
+
+        /// <summary>UI 測試模式：把每個控制項的實際座標寫成文字檔（隨截圖上傳，供精確診斷）。</summary>
+        private void WriteUiTestDiag()
+        {
+            try
+            {
+                var sb = new System.Text.StringBuilder();
+                sb.AppendLine("Panel2: " + _sc.Panel2.Width + "x" + _sc.Panel2.Height
+                    + " client=" + _sc.Panel2.ClientSize.Width + "x" + _sc.Panel2.ClientSize.Height);
+                sb.AppendLine("搜尋列面板: " + _pnlSearch.GetType().Name + " bounds=" + _pnlSearch.Bounds
+                    + " visible=" + _pnlSearch.Visible + " enabled=" + _pnlSearch.Enabled
+                    + " parent=" + (_pnlSearch.Parent == null ? "null" : _pnlSearch.Parent.GetType().Name));
+                sb.AppendLine("表格: " + _grid.GetType().Name + " bounds=" + _grid.Bounds + " visible=" + _grid.Visible);
+                sb.AppendLine("底列: " + _pnlBottom.GetType().Name + " bounds=" + _pnlBottom.Bounds + " visible=" + _pnlBottom.Visible);
+                foreach (Control c in _pnlSearch.Controls)
+                {
+                    sb.AppendLine("  子控制項: " + c.GetType().Name + " bounds=" + c.Bounds
+                        + " visible=" + c.Visible + " enabled=" + c.Enabled
+                        + " text=\"" + (c.Text ?? "") + "\"");
+                }
+                string dir = System.IO.Path.Combine(Environment.CurrentDirectory, "screenshots");
+                System.IO.Directory.CreateDirectory(dir);
+                System.IO.File.WriteAllText(System.IO.Path.Combine(dir, "diag.txt"), sb.ToString());
+                StartupLog.Log("已寫出 diag.txt");
+            }
+            catch (Exception ex)
+            {
+                StartupLog.LogException("寫出 diag.txt 失敗", ex);
+            }
         }
 
         private void OnFormClosing(object sender, FormClosingEventArgs e)
