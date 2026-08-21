@@ -9,10 +9,8 @@
     </security>
   </trustInfo>
   <application xmlns="urn:schemas-microsoft-com:asm.v3">
-    <windowsSettings>
-      <!-- 系統 DPI 感知：避免 Win10/11 高 DPI 下文字模糊 -->
-      <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true</dpiAware>
-    </windowsSettings>
+    <!-- 刻意不宣告 DPI 感知：交由 Windows 統一縮放（與 Outlook 2007 相同模式），
+         避免高 DPI 顯示器上視窗尺寸與內容錯亂、被裁切。 -->
   </application>
   <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
     <application>
