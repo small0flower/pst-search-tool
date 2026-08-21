@@ -62,6 +62,8 @@ namespace PstSearchTool.UI
         private Panel _pnlSearch;
         private Panel _pnlBottom;
         private Button _btnDiag;
+        private MenuStrip _menu;
+        private Panel _pnlTop;
 
         public MainForm()
         {
@@ -92,7 +94,6 @@ namespace PstSearchTool.UI
             // --- 頂端來源列（流式排版：控制項自動排列/換行，任何視窗寬度都不會被裁掉）---
             var pnlTop = new FlowLayoutPanel
             {
-                Dock = DockStyle.Top,
                 AutoSize = true,
                 AutoSizeMode = AutoSizeMode.GrowAndShrink,
                 FlowDirection = FlowDirection.LeftToRight,
@@ -100,6 +101,7 @@ namespace PstSearchTool.UI
                 Padding = new Padding(8, 8, 8, 4)
             };
             pnlTop.MinimumSize = new Size(0, 62);
+            _pnlTop = pnlTop;
             var tm = new Padding(4, 6, 8, 0);
             _rbCurrentPst = new RadioButton { Text = "目前 Outlook 中的 PST", AutoSize = true, Margin = tm };
             _rbExternalPst = new RadioButton { Text = "外掛 PST", AutoSize = true, Margin = tm };
@@ -116,7 +118,7 @@ namespace PstSearchTool.UI
             pnlTop.SetFlowBreak(_btnDiag, true); // 提示文字另起一列
 
             // --- 主分割（分隔距離與最小尺寸需於表單配置完成後設定，見 OnLoad）---
-            _sc = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Vertical };
+            _sc = new SplitContainer { Orientation = Orientation.Vertical };
             _sc.SplitterWidth = 5;
 
             // ==== 左側：存放區 + 資料夾 ====
@@ -245,10 +247,13 @@ namespace PstSearchTool.UI
             menu.Items.Add(mFile);
             menu.Items.Add(mTools);
             menu.Items.Add(mHelp);
+            _menu = menu;
 
+            // 表單層排版：選單/頂端列/主分割 由 LayoutMainForm 手動放置（不依賴 Dock，避免重疊）
             Controls.Add(menu);
             Controls.Add(pnlTop);
             Controls.Add(_sc);
+            Resize += (s, e) => LayoutMainForm();
 
             // --- 事件 ---
             _rbCurrentPst.CheckedChanged += SourceModeChanged;
@@ -319,6 +324,7 @@ namespace PstSearchTool.UI
                 // SplitContainer 需於表單完成配置後才設定分隔距離（建構時寬度為 0 會拋例外）
                 try
                 {
+                    LayoutMainForm();
                     _sc.SplitterDistance = (int)Math.Round(380 * _dpiScale);
                     _sc.Panel1MinSize = (int)Math.Round(300 * _dpiScale);
                     _sc.Panel2MinSize = (int)Math.Round(520 * _dpiScale);
@@ -358,6 +364,7 @@ namespace PstSearchTool.UI
         /// <summary>視窗已顯示後才載入郵件來源（避免 COM 呼叫阻塞視窗顯示）。</summary>
         private void OnShown(object sender, EventArgs e)
         {
+            LayoutMainForm();
             LayoutRightPanel();
             // 最終防護：若視窗仍超出螢幕工作區則修正（多螢幕/解析度變更等情況）
             try
@@ -393,6 +400,25 @@ namespace PstSearchTool.UI
             }
             catch { }
             return false;
+        }
+
+        /// <summary>手動排版表單層：選單在上、頂端列其次、主分割填滿其餘（不依賴 Dock，避免重疊遮蓋）。</summary>
+        private void LayoutMainForm()
+        {
+            try
+            {
+                int w = ClientSize.Width;
+                int h = ClientSize.Height;
+                if (w <= 0 || h <= 0) return;
+                int mh = _menu != null ? _menu.Height : 24;
+                int th = _pnlTop != null ? _pnlTop.Height : 62;
+                if (mh < 18) mh = 24;
+                if (th < 40) th = 62;
+                _menu.SetBounds(0, 0, w, mh);
+                _pnlTop.SetBounds(0, mh, w, th);
+                _sc.SetBounds(0, mh + th, w, Math.Max(0, h - mh - th));
+            }
+            catch { }
         }
 
         /// <summary>手動排版右側面板：搜尋列在上、底列在下、表格填滿中間（不依賴 Dock 順序）。</summary>
