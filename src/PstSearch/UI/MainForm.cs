@@ -60,6 +60,7 @@ namespace PstSearchTool.UI
         private SplitContainer _sc;
         private float _dpiScale = 1f;
         private Panel _pnlSearch;
+        private Button _btnDiag;
 
         public MainForm()
         {
@@ -94,12 +95,13 @@ namespace PstSearchTool.UI
             _txtDir = new TextBox { Left = 370, Top = 8, Width = 400, ReadOnly = true };
             _btnBrowseDir = new Button { Text = "瀏覽…", Left = 778, Top = 6, Width = 76 };
             _btnRefreshStores = new Button { Text = "重新整理來源", Left = 862, Top = 6, Width = 110 };
+            _btnDiag = new Button { Text = "複製診斷資訊", Left = 980, Top = 6, Width = 110, Anchor = AnchorStyles.Top | AnchorStyles.Right };
             var lblHint = new Label
             {
                 Text = "外掛 PST 會加入 Outlook 設定檔以建立索引與開啟郵件（之後可於 Outlook「檔案→資料檔管理」移除）。",
                 Left = 10, Top = 36, AutoSize = true, ForeColor = Color.Gray
             };
-            pnlTop.Controls.AddRange(new Control[] { _rbCurrentPst, _rbExternalPst, _txtDir, _btnBrowseDir, _btnRefreshStores, lblHint });
+            pnlTop.Controls.AddRange(new Control[] { _rbCurrentPst, _rbExternalPst, _txtDir, _btnBrowseDir, _btnRefreshStores, _btnDiag, lblHint });
 
             // --- 主分割（分隔距離與最小尺寸需於表單配置完成後設定，見 OnLoad）---
             _sc = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Vertical };
@@ -222,7 +224,10 @@ namespace PstSearchTool.UI
             var mHelp = new ToolStripMenuItem("說明");
             var mAbout = new ToolStripMenuItem("關於");
             mAbout.Click += (s, e) => ShowAbout();
+            var mDiag = new ToolStripMenuItem("複製診斷資訊");
+            mDiag.Click += (s, e) => CopyDiagnostics();
             mHelp.DropDownItems.Add(mAbout);
+            mHelp.DropDownItems.Add(mDiag);
             menu.Items.Add(mFile);
             menu.Items.Add(mTools);
             menu.Items.Add(mHelp);
@@ -236,6 +241,7 @@ namespace PstSearchTool.UI
             _rbExternalPst.CheckedChanged += SourceModeChanged;
             _btnBrowseDir.Click += BtnBrowseDir_Click;
             _btnRefreshStores.Click += (s, e) => RefreshStores();
+            _btnDiag.Click += (s, e) => CopyDiagnostics();
             _lvStores.ItemSelectionChanged += LvStores_ItemSelectionChanged;
             _tvFolders.AfterCheck += TvFolders_AfterCheck;
             _btnInbox.Click += (s, e) => CheckKindOnly("inbox");
@@ -398,6 +404,65 @@ namespace PstSearchTool.UI
                 + "設定檔：" + System.IO.Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PstSearchTool", "config.xml");
             MessageBox.Show(this, msg, "關於", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void CopyDiagnostics()
+        {
+            try
+            {
+                Clipboard.SetText(BuildDiagnostics());
+                MessageBox.Show(this, "診斷資訊已複製到剪貼簿。\n請直接到對話框按 Ctrl+V 貼上。", "診斷",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                Err("複製失敗：" + ex.Message + "\n\n請改為執行下面指令後貼上 startup.log：\nGet-Content \"$env:APPDATA\\PstSearchTool\\startup.log\" -Encoding UTF8");
+            }
+        }
+
+        private void DumpControl(System.Text.StringBuilder sb, string name, Control c)
+        {
+            if (c == null) { sb.AppendLine(name + ": (null)"); return; }
+            sb.AppendLine(name + ": " + (c.Visible ? "可見" : "隱藏") + " @ " + c.Left + "," + c.Top + " 尺寸 " + c.Width + "x" + c.Height);
+        }
+
+        private string BuildDiagnostics()
+        {
+            var sb = new System.Text.StringBuilder();
+            var ver = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+            var wa = Screen.PrimaryScreen.WorkingArea;
+            sb.AppendLine("版本: v" + (ver == null ? "?" : ver.ToString(3)));
+            sb.AppendLine("DPI 縮放: " + _dpiScale.ToString("0.00"));
+            sb.AppendLine("視窗: " + Width + "x" + Height + " @ " + Left + "," + Top + " 最大化=" + (WindowState == FormWindowState.Maximized));
+            sb.AppendLine("螢幕工作區: " + wa.Width + "x" + wa.Height);
+            sb.AppendLine("SplitContainer: 總寬=" + _sc.Width + " 分隔距離=" + _sc.SplitterDistance + " 左欄=" + _sc.Panel1.Width + " 右欄=" + _sc.Panel2.Width + "x" + _sc.Panel2.Height);
+            sb.AppendLine("搜尋列面板: " + (_pnlSearch == null ? "(null)" : "高=" + _pnlSearch.Height + " 寬=" + _pnlSearch.Width + " 可見=" + _pnlSearch.Visible));
+            DumpControl(sb, "關鍵字框", _txtKeyword);
+            DumpControl(sb, "搜尋鈕", _btnSearch);
+            DumpControl(sb, "清除鈕", _btnClearSearch);
+            DumpControl(sb, "日期勾選", _chkDate);
+            DumpControl(sb, "起始日期", _dtFrom);
+            DumpControl(sb, "結束日期", _dtTo);
+            DumpControl(sb, "寄件者框", _txtSender);
+            DumpControl(sb, "資料夾下拉", _cmbFolderFilter);
+            DumpControl(sb, "結果表格", _grid);
+            DumpControl(sb, "存放區清單", _lvStores);
+            DumpControl(sb, "資料夾樹", _tvFolders);
+            sb.AppendLine("--- 最近日誌 ---");
+            try
+            {
+                string log = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PstSearchTool", "startup.log");
+                if (System.IO.File.Exists(log))
+                {
+                    string[] lines = System.IO.File.ReadAllLines(log);
+                    int start = Math.Max(0, lines.Length - 15);
+                    for (int i = start; i < lines.Length; i++) sb.AppendLine(lines[i]);
+                }
+                else sb.AppendLine("(無日誌)");
+            }
+            catch { sb.AppendLine("(日誌讀取失敗)"); }
+            return sb.ToString();
         }
 
         private void SourceModeChanged(object sender, EventArgs e)
