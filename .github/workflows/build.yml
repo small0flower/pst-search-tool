@@ -34,5 +34,39 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: PstSearchTool-v1.0.4
+          name: PstSearchTool-v1.0.5
           path: dist/
+
+  # 在真實 Windows 上執行程式並截圖，供開發者直接檢視介面排版
+  uitest:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build
+        run: dotnet build src/PstSearch/PstSearch.csproj -c Release -p:Platform=AnyCPU
+
+      - name: Run app and capture screenshot
+        run: |
+          $app = Resolve-Path 'src/PstSearch/bin/Release/net48/PstSearchTool.exe'
+          $p = Start-Process $app -ArgumentList '--uitest' -PassThru
+          Start-Sleep -Seconds 8
+          Add-Type -AssemblyName System.Windows.Forms
+          Add-Type -AssemblyName System.Drawing
+          $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+          $bmp = New-Object System.Drawing.Bitmap($b.Width, $b.Height)
+          $g = [System.Drawing.Graphics]::FromImage($bmp)
+          $g.CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
+          $bmp.Save("uitest.png")
+          $g.Dispose(); $bmp.Dispose()
+          Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+          Write-Host "Screenshot saved. Screen: $($b.Width)x$($b.Height)"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: uitest-screenshot
+          path: uitest.png

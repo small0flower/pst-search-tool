@@ -88,20 +88,31 @@ namespace PstSearchTool.UI
             StartPosition = FormStartPosition.CenterScreen;
             KeyPreview = true;
 
-            // --- 頂端來源列 ---
-            var pnlTop = new Panel { Dock = DockStyle.Top, Height = 62 };
-            _rbCurrentPst = new RadioButton { Text = "目前 Outlook 中的 PST", Left = 10, Top = 10, AutoSize = true };
-            _rbExternalPst = new RadioButton { Text = "外掛 PST", Left = 260, Top = 10, AutoSize = true };
-            _txtDir = new TextBox { Left = 370, Top = 8, Width = 400, ReadOnly = true };
-            _btnBrowseDir = new Button { Text = "瀏覽…", Left = 778, Top = 6, Width = 76 };
-            _btnRefreshStores = new Button { Text = "重新整理來源", Left = 862, Top = 6, Width = 110 };
-            _btnDiag = new Button { Text = "複製診斷資訊", Left = 980, Top = 6, Width = 110, Anchor = AnchorStyles.Top | AnchorStyles.Right };
+            // --- 頂端來源列（流式排版：控制項自動排列/換行，任何視窗寬度都不會被裁掉）---
+            var pnlTop = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = true,
+                Padding = new Padding(8, 8, 8, 4)
+            };
+            pnlTop.MinimumSize = new Size(0, 62);
+            var tm = new Padding(4, 6, 8, 0);
+            _rbCurrentPst = new RadioButton { Text = "目前 Outlook 中的 PST", AutoSize = true, Margin = tm };
+            _rbExternalPst = new RadioButton { Text = "外掛 PST", AutoSize = true, Margin = tm };
+            _txtDir = new TextBox { Width = 400, ReadOnly = true, Margin = tm };
+            _btnBrowseDir = new Button { Text = "瀏覽…", Width = 76, Margin = tm };
+            _btnRefreshStores = new Button { Text = "重新整理來源", Width = 110, Margin = tm };
+            _btnDiag = new Button { Text = "複製診斷資訊", Width = 110, Margin = tm };
             var lblHint = new Label
             {
                 Text = "外掛 PST 會加入 Outlook 設定檔以建立索引與開啟郵件（之後可於 Outlook「檔案→資料檔管理」移除）。",
-                Left = 10, Top = 36, AutoSize = true, ForeColor = Color.Gray
+                AutoSize = true, ForeColor = Color.Gray, Margin = tm
             };
             pnlTop.Controls.AddRange(new Control[] { _rbCurrentPst, _rbExternalPst, _txtDir, _btnBrowseDir, _btnRefreshStores, _btnDiag, lblHint });
+            pnlTop.SetFlowBreak(_btnDiag, true); // 提示文字另起一列
 
             // --- 主分割（分隔距離與最小尺寸需於表單配置完成後設定，見 OnLoad）---
             _sc = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Vertical };
@@ -356,8 +367,26 @@ namespace PstSearchTool.UI
                 StartupLog.Log("視窗顯示最終：" + Width + "x" + Height + " @ " + Left + "," + Top);
             }
             catch { }
+            if (IsUiTestMode())
+            {
+                StartupLog.Log("UI 測試模式：不連線 Outlook");
+                _lblStatus.Text = "UI 測試模式（未連線 Outlook）";
+                return;
+            }
             StartupLog.Log("視窗已顯示，開始載入郵件來源");
             RefreshStores();
+        }
+
+        /// <summary>CI 畫面測試模式：跳過 Outlook 連線，僅驗證介面排版。</summary>
+        private static bool IsUiTestMode()
+        {
+            try
+            {
+                foreach (string a in Environment.GetCommandLineArgs())
+                    if (a == "--uitest") return true;
+            }
+            catch { }
+            return false;
         }
 
         private void OnFormClosing(object sender, FormClosingEventArgs e)
