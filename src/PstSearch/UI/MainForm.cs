@@ -60,6 +60,7 @@ namespace PstSearchTool.UI
         private SplitContainer _sc;
         private float _dpiScale = 1f;
         private Button _btnTheme;
+        private Panel _pnlSearch;
 
         public MainForm()
         {
@@ -130,6 +131,7 @@ namespace PstSearchTool.UI
             _sc.Panel1.Controls.AddRange(new Control[] { lblStores, _lvStores, lblFolders, _btnInbox, _btnSent, _btnAllFolders, _btnClearFolders, _tvFolders });
             // ==== 右側：搜尋 + 結果 ====
             var pnlSearch = new Panel { Dock = DockStyle.Top, Height = 124 };
+            _pnlSearch = pnlSearch;
             var lblKw = new Label { Text = "4. 搜尋條件", Left = 10, Top = 8, AutoSize = true, Font = new Font(Font, FontStyle.Bold) };
             _txtKeyword = new TextBox { Left = 10, Top = 32, Width = 380 };
             _btnSearch = new Button { Text = "搜尋", Left = 400, Top = 30, Width = 90 };
@@ -365,9 +367,14 @@ namespace PstSearchTool.UI
             var wa = Screen.PrimaryScreen.WorkingArea;
             string msg = "Outlook PST 搜尋工具 v" + (ver == null ? "?" : ver.ToString(3)) + "\n\n"
                 + "DPI 縮放：" + _dpiScale.ToString("0.00") + "\n"
-                + "視窗：" + Width + " x " + Height + " @ " + Left + "," + Top + "\n"
+                + "視窗：" + Width + " x " + Height + " @ " + Left + "," + Top + "（最大化：" + (WindowState == FormWindowState.Maximized) + "）\n"
                 + "螢幕工作區：" + wa.Width + " x " + wa.Height + "\n"
                 + "主題：" + (Theme.IsDark ? "深色" : "淺色") + "\n\n"
+                + "--- 診斷 ---\n"
+                + "搜尋列：寬 " + (_pnlSearch != null ? _pnlSearch.Width.ToString() : "?") + " 高 " + (_pnlSearch != null ? _pnlSearch.Height.ToString() : "?") + "\n"
+                + "起始日期：" + _dtFrom.Left + "," + _dtFrom.Top + " " + _dtFrom.Width + "x" + _dtFrom.Height + " 可見:" + _dtFrom.Visible + "\n"
+                + "結束日期：" + _dtTo.Left + "," + _dtTo.Top + " " + _dtTo.Width + "x" + _dtTo.Height + " 可見:" + _dtTo.Visible + "\n"
+                + "結果表格：" + _grid.Width + "x" + _grid.Height + "\n\n"
                 + "索引資料庫：" + _settings.DbPath + "\n"
                 + "設定檔：" + System.IO.Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PstSearchTool", "config.xml");

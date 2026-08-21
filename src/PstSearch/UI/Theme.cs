@@ -32,10 +32,17 @@ namespace PstSearchTool.UI
             {
                 c.BackColor = DarkPanel;
                 c.ForeColor = DarkFore;
-                if (c is TextBoxBase || c is ComboBox || c is DateTimePicker || c is CheckedListBox || c is ListBox)
+                if (c is TextBoxBase || c is ComboBox || c is CheckedListBox || c is ListBox)
                 {
                     c.BackColor = DarkControl;
                     c.ForeColor = DarkFore;
+                }
+                else if (c is DateTimePicker)
+                {
+                    // DateTimePicker 的深色背景支援在各 Windows 版本不一；
+                    // 固定使用系統色，確保日期文字永遠可見。
+                    c.BackColor = SystemColors.Window;
+                    c.ForeColor = SystemColors.WindowText;
                 }
                 else if (c is TreeView tv)
                 {
