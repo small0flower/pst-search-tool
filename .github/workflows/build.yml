@@ -37,9 +37,11 @@ jobs:
           name: PstSearchTool-v1.0.5
           path: dist/
 
-  # 在真實 Windows 上執行程式並截圖，供開發者直接檢視介面排版
+  # 在真實 Windows 上執行程式並截圖，commit 回 repo（公開 repo 可直接抓取檢視）
   uitest:
     runs-on: windows-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -52,6 +54,7 @@ jobs:
 
       - name: Run app and capture screenshot
         run: |
+          New-Item -ItemType Directory -Force screenshots | Out-Null
           $app = Resolve-Path 'src/PstSearch/bin/Release/net48/PstSearchTool.exe'
           $p = Start-Process $app -ArgumentList '--uitest' -PassThru
           Start-Sleep -Seconds 8
@@ -61,12 +64,20 @@ jobs:
           $bmp = New-Object System.Drawing.Bitmap($b.Width, $b.Height)
           $g = [System.Drawing.Graphics]::FromImage($bmp)
           $g.CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
-          $bmp.Save("uitest.png")
+          $bmp.Save("screenshots/uitest.png")
           $g.Dispose(); $bmp.Dispose()
           Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
-          Write-Host "Screenshot saved. Screen: $($b.Width)x$($b.Height)"
+          Write-Host "Screen: $($b.Width)x$($b.Height) saved"
+
+      - name: Commit screenshot to repo
+        run: |
+          git config user.name "uitest-bot"
+          git config user.email "uitest-bot@users.noreply.github.com"
+          git add screenshots/uitest.png
+          git commit -m "uitest screenshot $(Get-Date -Format 'yyyyMMddHHmmss')" --allow-empty
+          git push origin HEAD:uitest-screenshot --force
 
       - uses: actions/upload-artifact@v4
         with:
           name: uitest-screenshot
-          path: uitest.png
+          path: screenshots/uitest.png
