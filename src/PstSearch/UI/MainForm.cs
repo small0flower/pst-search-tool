@@ -252,30 +252,18 @@ namespace PstSearchTool.UI
 
             try
             {
-                // 視窗尺寸：內容最小需求約 1000x620（邏輯單位），太小的舊設定直接改用
-                // 貼近螢幕的預設尺寸，確保右側搜尋/結果欄位不被裁切；並限制在工作區內、置中。
+                // 視窗一律以「工作區減邊距」的固定尺寸開啟並置中；
+                // 不沿用舊尺寸/最大化狀態，避免多螢幕或解析度變更造成視窗超出畫面。
                 try
                 {
-                    var wa = Screen.FromControl(this).WorkingArea;
-                    int defaultW = Math.Max(wa.Width - 40, 900);
-                    int defaultH = Math.Max(wa.Height - 80, 620);
-                    int w = defaultW, h = defaultH;
-                    if (_settings.WindowW > 0)
-                    {
-                        w = (int)Math.Round(_settings.WindowW * _dpiScale);
-                        h = (int)Math.Round(_settings.WindowH * _dpiScale);
-                        int minW = (int)Math.Round(1000 * _dpiScale);
-                        int minH = (int)Math.Round(620 * _dpiScale);
-                        if (w < minW || h < minH) { w = defaultW; h = defaultH; }
-                    }
+                    var wa = Screen.PrimaryScreen.WorkingArea;
+                    int w = Math.Max(wa.Width - 40, 800);
+                    int h = Math.Max(wa.Height - 80, 600);
                     w = Math.Min(w, wa.Width - 20);
                     h = Math.Min(h, wa.Height - 40);
-                    if (w < MinimumSize.Width && MinimumSize.Width <= wa.Width - 20) w = MinimumSize.Width;
-                    if (h < MinimumSize.Height && MinimumSize.Height <= wa.Height - 40) h = MinimumSize.Height;
                     StartPosition = FormStartPosition.Manual;
                     SetBounds(wa.Left + (wa.Width - w) / 2, wa.Top + (wa.Height - h) / 2, w, h, BoundsSpecified.All);
-                    if (_settings.WindowMaximized) WindowState = FormWindowState.Maximized;
-                    StartupLog.Log("視窗位置：" + Left + "," + Top + " 尺寸：" + Width + "x" + Height + " 工作區：" + wa.Width + "x" + wa.Height);
+                    StartupLog.Log("螢幕工作區：" + wa.Width + "x" + wa.Height + " 視窗尺寸：" + w + "x" + h);
                 }
                 catch (Exception ex)
                 {
@@ -327,6 +315,19 @@ namespace PstSearchTool.UI
         /// <summary>視窗已顯示後才載入郵件來源（避免 COM 呼叫阻塞視窗顯示）。</summary>
         private void OnShown(object sender, EventArgs e)
         {
+            // 最終防護：若視窗仍超出螢幕工作區則修正（多螢幕/解析度變更等情況）
+            try
+            {
+                var wa = Screen.PrimaryScreen.WorkingArea;
+                if (Width > wa.Width) Width = wa.Width - 20;
+                if (Height > wa.Height) Height = wa.Height - 40;
+                if (Left < wa.Left - 10) Left = wa.Left;
+                if (Top < wa.Top - 10) Top = wa.Top;
+                if (Right > wa.Right) Left = wa.Right - Width;
+                if (Bottom > wa.Bottom) Top = wa.Bottom - Height;
+                StartupLog.Log("視窗顯示最終：" + Width + "x" + Height + " @ " + Left + "," + Top);
+            }
+            catch { }
             StartupLog.Log("視窗已顯示，開始載入郵件來源");
             RefreshStores();
         }
@@ -361,9 +362,11 @@ namespace PstSearchTool.UI
         private void ShowAbout()
         {
             var ver = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+            var wa = Screen.PrimaryScreen.WorkingArea;
             string msg = "Outlook PST 搜尋工具 v" + (ver == null ? "?" : ver.ToString(3)) + "\n\n"
                 + "DPI 縮放：" + _dpiScale.ToString("0.00") + "\n"
                 + "視窗：" + Width + " x " + Height + " @ " + Left + "," + Top + "\n"
+                + "螢幕工作區：" + wa.Width + " x " + wa.Height + "\n"
                 + "主題：" + (Theme.IsDark ? "深色" : "淺色") + "\n\n"
                 + "索引資料庫：" + _settings.DbPath + "\n"
                 + "設定檔：" + System.IO.Path.Combine(
