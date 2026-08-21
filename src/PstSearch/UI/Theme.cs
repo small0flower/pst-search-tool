@@ -24,7 +24,11 @@ namespace PstSearchTool.UI
 
         private static void ApplyRecursive(Control c, bool dark)
         {
-            if (dark)
+            if (c is ToolStrip)
+            {
+                // 選單列保留系統樣式（避免自訂渲染器造成顯示異常）
+            }
+            else if (dark)
             {
                 c.BackColor = DarkPanel;
                 c.ForeColor = DarkFore;

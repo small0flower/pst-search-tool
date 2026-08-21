@@ -178,8 +178,31 @@ namespace PstSearchTool.UI
             _sc.Panel2.Controls.Add(pnlSearch);
             _sc.Panel2.Controls.Add(pnlBottom);
 
-            Controls.Add(_sc);
+            // --- 頂端選單列（主題切換、重新整理、關於）---
+            var menu = new MenuStrip();
+            var mFile = new ToolStripMenuItem("檔案");
+            var mExit = new ToolStripMenuItem("結束");
+            mExit.Click += (s, e) => Close();
+            mFile.DropDownItems.Add(mExit);
+            var mTools = new ToolStripMenuItem("工具");
+            var mTheme = new ToolStripMenuItem("切換深色模式");
+            mTheme.ShortcutKeys = Keys.Control | Keys.D;
+            mTheme.Click += (s, e) => BtnTheme_Click(s, e);
+            var mRefresh = new ToolStripMenuItem("重新整理來源");
+            mRefresh.Click += (s, e) => RefreshStores();
+            mTools.DropDownItems.Add(mTheme);
+            mTools.DropDownItems.Add(mRefresh);
+            var mHelp = new ToolStripMenuItem("說明");
+            var mAbout = new ToolStripMenuItem("關於");
+            mAbout.Click += (s, e) => ShowAbout();
+            mHelp.DropDownItems.Add(mAbout);
+            menu.Items.Add(mFile);
+            menu.Items.Add(mTools);
+            menu.Items.Add(mHelp);
+
+            Controls.Add(menu);
             Controls.Add(pnlTop);
+            Controls.Add(_sc);
 
             // --- 事件 ---
             _rbCurrentPst.CheckedChanged += SourceModeChanged;
@@ -241,14 +264,19 @@ namespace PstSearchTool.UI
                         BoundsSpecified.All);
                     if (_settings.WindowMaximized) WindowState = FormWindowState.Maximized;
                 }
-                // 視窗不得超出螢幕工作區（高 DPI 縮放後可能超過）
+                // 視窗完全限制在螢幕工作區內（高 DPI 縮放或舊設定可能超出）
                 try
                 {
                     var wa = Screen.FromControl(this).WorkingArea;
                     if (Width > wa.Width - 20) Width = wa.Width - 20;
                     if (Height > wa.Height - 40) Height = wa.Height - 40;
+                    if (Width < MinimumSize.Width) Width = MinimumSize.Width;
+                    if (Height < MinimumSize.Height) Height = MinimumSize.Height;
                     if (Left < wa.Left) Left = wa.Left;
                     if (Top < wa.Top) Top = wa.Top;
+                    if (Right > wa.Right) Left = wa.Right - Width;
+                    if (Bottom > wa.Bottom) Top = wa.Bottom - Height;
+                    StartupLog.Log("視窗位置：" + Left + "," + Top + " 尺寸：" + Width + "x" + Height + " 工作區：" + wa.Width + "x" + wa.Height);
                 }
                 catch { }
 
@@ -328,6 +356,19 @@ namespace PstSearchTool.UI
         }
 
         // ------------------------------------------------------------------ 來源與資料夾
+        private void ShowAbout()
+        {
+            var ver = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+            string msg = "Outlook PST 搜尋工具 v" + (ver == null ? "?" : ver.ToString(3)) + "\n\n"
+                + "DPI 縮放：" + _dpiScale.ToString("0.00") + "\n"
+                + "視窗：" + Width + " x " + Height + " @ " + Left + "," + Top + "\n"
+                + "主題：" + (Theme.IsDark ? "深色" : "淺色") + "\n\n"
+                + "索引資料庫：" + _settings.DbPath + "\n"
+                + "設定檔：" + System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PstSearchTool", "config.xml");
+            MessageBox.Show(this, msg, "關於", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
         private void BtnTheme_Click(object sender, EventArgs e)
         {
             bool dark = !Theme.IsDark;
