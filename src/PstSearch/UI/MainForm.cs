@@ -129,8 +129,8 @@ namespace PstSearchTool.UI
                 View = View.Details, CheckBoxes = true, FullRowSelect = true, MultiSelect = false, HideSelection = false,
                 Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
             };
-            _lvStores.Columns.Add("名稱", 150);
-            _lvStores.Columns.Add("檔案", 200);
+            _lvStores.Columns.Add("名稱", 160);
+            _lvStores.Columns.Add("檔案", 520);
 
             var lblFolders = new Label { Text = "3. 資料夾（勾選要索引的；含其子資料夾）", Left = 10, Top = 192, AutoSize = true, Font = new Font(Font, FontStyle.Bold) };
             _btnInbox = new Button { Text = "收件匣", Left = 10, Top = 214, Width = 72 };
@@ -184,9 +184,15 @@ namespace PstSearchTool.UI
             pnlSearch.Controls.Add(_btnSearch, 2, 1);
             pnlSearch.Controls.Add(_btnClearSearch, 3, 1);
             pnlSearch.Controls.Add(_chkDate, 0, 2);
-            pnlSearch.Controls.Add(_dtFrom, 1, 2);
-            pnlSearch.Controls.Add(lblDash, 2, 2);
-            pnlSearch.Controls.Add(_dtTo, 3, 2);
+            // 日期三件組（起始＋～＋結束）放同一格，避免被表格欄寬撐開造成間距過大
+            var dateRow = new Panel { Height = 30, Width = 330, Margin = new Padding(4, 3, 8, 0) };
+            _dtFrom.SetBounds(0, 0, 145, 23);
+            lblDash.SetBounds(150, 4, 20, 16);
+            _dtTo.SetBounds(172, 0, 145, 23);
+            dateRow.Controls.Add(_dtFrom);
+            dateRow.Controls.Add(lblDash);
+            dateRow.Controls.Add(_dtTo);
+            pnlSearch.Controls.Add(dateRow, 1, 2);
             pnlSearch.Controls.Add(lblSender, 0, 3);
             pnlSearch.Controls.Add(_txtSender, 1, 3);
             pnlSearch.Controls.Add(lblFolderF, 2, 3);
