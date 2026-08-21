@@ -232,7 +232,13 @@ namespace PstSearchTool.UI
                 if (_settings.WindowW > 0)
                 {
                     StartPosition = FormStartPosition.Manual;
-                    SetBounds(_settings.WindowX, _settings.WindowY, _settings.WindowW, _settings.WindowH, BoundsSpecified.All);
+                    // 舊版儲存的視窗大小未縮放；以邏輯單位 × DPI 比例還原，避免視窗過窄裁切右側 UI
+                    SetBounds(
+                        (int)Math.Round(_settings.WindowX * _dpiScale),
+                        (int)Math.Round(_settings.WindowY * _dpiScale),
+                        (int)Math.Round(_settings.WindowW * _dpiScale),
+                        (int)Math.Round(_settings.WindowH * _dpiScale),
+                        BoundsSpecified.All);
                     if (_settings.WindowMaximized) WindowState = FormWindowState.Maximized;
                 }
                 // 視窗不得超出螢幕工作區（高 DPI 縮放後可能超過）
@@ -308,10 +314,11 @@ namespace PstSearchTool.UI
             _settings.ExternalDir = _txtDir.Text;
             if (WindowState == FormWindowState.Normal)
             {
-                _settings.WindowX = Location.X;
-                _settings.WindowY = Location.Y;
-                _settings.WindowW = Size.Width;
-                _settings.WindowH = Size.Height;
+                // 以 96 DPI 邏輯單位儲存，還原時乘回縮放比例（跨 DPI / 版本一致）
+                _settings.WindowX = (int)Math.Round(Location.X / _dpiScale);
+                _settings.WindowY = (int)Math.Round(Location.Y / _dpiScale);
+                _settings.WindowW = (int)Math.Round(Size.Width / _dpiScale);
+                _settings.WindowH = (int)Math.Round(Size.Height / _dpiScale);
                 _settings.WindowMaximized = false;
             }
             else _settings.WindowMaximized = (WindowState == FormWindowState.Maximized);
