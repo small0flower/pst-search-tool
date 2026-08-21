@@ -60,6 +60,7 @@ namespace PstSearchTool.UI
         private SplitContainer _sc;
         private float _dpiScale = 1f;
         private Panel _pnlSearch;
+        private Panel _pnlBottom;
         private Button _btnDiag;
 
         public MainForm()
@@ -141,11 +142,11 @@ namespace PstSearchTool.UI
             };
             _sc.Panel1.Controls.AddRange(new Control[] { lblStores, _lvStores, lblFolders, _btnInbox, _btnSent, _btnAllFolders, _btnClearFolders, _tvFolders });
             // ==== 右側：搜尋 + 結果 ====
-            // 搜尋區採固定高度表格排版（TableLayoutPanel）：4 列固定列高，
-            // 欄位放入指定格子，結構上不可能被切掉或消失。
+            // 搜尋區採固定高度表格排版（TableLayoutPanel）：4 列固定列高，欄位放入指定格子。
+            // 注意：三個區塊不依賴 Dock 排版（實測在部分環境 Dock=Top 面板會消失），
+            // 改用 LayoutRightPanel() 手動指定位置（見 Resize 事件）。
             var pnlSearch = new TableLayoutPanel
             {
-                Dock = DockStyle.Top,
                 Height = 124,
                 ColumnCount = 4,
                 RowCount = 4,
@@ -189,7 +190,8 @@ namespace PstSearchTool.UI
             pnlSearch.Controls.Add(lblFolderF, 2, 3);
             pnlSearch.Controls.Add(_cmbFolderFilter, 3, 3);
 
-            var pnlBottom = new Panel { Dock = DockStyle.Bottom, Height = 44 };
+            var pnlBottom = new Panel { Height = 44 };
+            _pnlBottom = pnlBottom;
             _btnIndex = new Button { Text = "建立/更新索引", Left = 10, Top = 9, Width = 120 };
             _btnRebuild = new Button { Text = "完整重建索引", Left = 140, Top = 9, Width = 110 };
             _btnCancel = new Button { Text = "取消", Left = 260, Top = 9, Width = 70, Enabled = false };
@@ -199,7 +201,6 @@ namespace PstSearchTool.UI
 
             _grid = new DataGridView
             {
-                Dock = DockStyle.Fill,
                 ReadOnly = true,
                 AllowUserToAddRows = false,
                 AllowUserToDeleteRows = false,
@@ -218,11 +219,11 @@ namespace PstSearchTool.UI
             var c5 = new DataGridViewTextBoxColumn { HeaderText = "存放區", Width = 90, SortMode = DataGridViewColumnSortMode.NotSortable };
             _grid.Columns.AddRange(new DataGridViewColumn[] { c0, c1, c2, c3, c4, c5 });
 
-            // 重要：Dock=Fill 的控制項必須「最後」加入 Panel2，
-            // 否則 Fill 會先佔滿整個面板，導致後加的 Top 搜尋列/底部列高度為 0 而消失。
+            // 加入 Panel2（位置由 LayoutRightPanel 統一安排）
             _sc.Panel2.Controls.Add(pnlSearch);
             _sc.Panel2.Controls.Add(pnlBottom);
             _sc.Panel2.Controls.Add(_grid);
+            _sc.Panel2.Resize += (s, e) => LayoutRightPanel();
 
             // --- 頂端選單列（主題切換、重新整理、關於）---
             var menu = new MenuStrip();
@@ -326,6 +327,7 @@ namespace PstSearchTool.UI
                 {
                     StartupLog.LogException("設定 SplitContainer 失敗", ex);
                 }
+                LayoutRightPanel();
 
                 _suppressSource = true;
                 if (_settings.SourceMode == 1) _rbExternalPst.Checked = true;
@@ -356,6 +358,7 @@ namespace PstSearchTool.UI
         /// <summary>視窗已顯示後才載入郵件來源（避免 COM 呼叫阻塞視窗顯示）。</summary>
         private void OnShown(object sender, EventArgs e)
         {
+            LayoutRightPanel();
             // 最終防護：若視窗仍超出螢幕工作區則修正（多螢幕/解析度變更等情況）
             try
             {
@@ -379,7 +382,7 @@ namespace PstSearchTool.UI
             RefreshStores();
         }
 
-        /// <summary>CI 畫面測試模式：跳過 Outlook 連線，僅驗證介面排版。</summary>
+        /// <summary>UI 測試模式：CI 畫面驗證用。</summary>
         private static bool IsUiTestMode()
         {
             try
@@ -389,6 +392,24 @@ namespace PstSearchTool.UI
             }
             catch { }
             return false;
+        }
+
+        /// <summary>手動排版右側面板：搜尋列在上、底列在下、表格填滿中間（不依賴 Dock 順序）。</summary>
+        private void LayoutRightPanel()
+        {
+            try
+            {
+                var p2 = _sc.Panel2;
+                int w = p2.ClientSize.Width;
+                int h = p2.ClientSize.Height;
+                if (w <= 0 || h <= 0) return;
+                int sh = _pnlSearch != null ? _pnlSearch.Height : 124;
+                int bh = _pnlBottom != null ? _pnlBottom.Height : 44;
+                _pnlSearch.SetBounds(0, 0, w, sh);
+                _pnlBottom.SetBounds(0, h - bh, w, bh);
+                _grid.SetBounds(0, sh, w, Math.Max(0, h - sh - bh));
+            }
+            catch { }
         }
 
         private void OnFormClosing(object sender, FormClosingEventArgs e)
