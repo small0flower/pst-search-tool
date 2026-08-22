@@ -956,7 +956,7 @@ namespace PstSearchTool.UI
                 {
                     string final = token.IsCancellationRequested
                         ? "索引已取消（已完成的資料夾已儲存）。"
-                        : (total > 0 ? "索引完成，共 " + total + " 封。" : "沒有可索引的郵件。");
+                        : (total > 0 ? "索引完成，共 " + total + " 封。索引涵蓋左側勾選的資料夾；取消勾選後請再按「建立/更新索引」以同步更新。" : "沒有可索引的郵件。");
                     Ui(() => { SetBusy(false, ""); _lblStatus.Text = final; });
                     try { _cts.Dispose(); } catch { }
                     _cts = null;

@@ -253,6 +253,16 @@ ON CONFLICT(store_id, entry_id) DO UPDATE SET
                     cmd.Parameters.AddWithValue("@prefix", folderPath + "/%");
                     cmd.ExecuteNonQuery();
                 }
+                // 同步清除該資料夾的快照（避免殘留導致清除邏輯重複判斷）
+                using (var cmd = _conn.CreateCommand())
+                {
+                    cmd.Transaction = _tx;
+                    cmd.CommandText = "DELETE FROM folder_snapshots WHERE store_id=@s AND (folder_path=@f OR folder_path LIKE @prefix)";
+                    cmd.Parameters.AddWithValue("@s", storeId);
+                    cmd.Parameters.AddWithValue("@f", folderPath);
+                    cmd.Parameters.AddWithValue("@prefix", folderPath + "/%");
+                    cmd.ExecuteNonQuery();
+                }
             }
         }
 
