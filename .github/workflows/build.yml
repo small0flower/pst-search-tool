@@ -34,7 +34,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: PstSearchTool-v1.0.11
+          name: PstSearchTool-v1.0.12
           path: dist/
 
   # 在真實 Windows 上執行程式、擷取應用程式視窗畫面，commit 回 repo（公開 repo 可直接抓取檢視）

@@ -318,6 +318,23 @@ ON CONFLICT(store_id, folder_path) DO UPDATE SET
             }
         }
 
+        /// <summary>回傳某存放區目前已索引的資料夾（依 folder_snapshots）。</summary>
+        public List<string> GetIndexedFolders(string storeId)
+        {
+            lock (_sync)
+            {
+                var list = new List<string>();
+                using (var cmd = _conn.CreateCommand())
+                {
+                    cmd.CommandText = "SELECT folder_path FROM folder_snapshots WHERE store_id=@s";
+                    cmd.Parameters.AddWithValue("@s", storeId);
+                    using (var r = cmd.ExecuteReader())
+                        while (r.Read()) list.Add(r.GetString(0));
+                }
+                return list;
+            }
+        }
+
         /// <summary>
         /// 全文搜尋。
         /// 關鍵字：CJK 2 字元走 bigram、3 字元以上走 trigram（精確子字串）；英文整詞不分大小寫；

@@ -882,11 +882,11 @@ namespace PstSearchTool.UI
             if (stores.Count == 0) { Err("請先在「郵件來源」勾選至少一個存放區。"); return; }
 
             var plan = new List<KeyValuePair<StoreInfo, List<FolderInfo>>>();
-            var skipped = new List<string>();
+            var skipped = new List<StoreInfo>();
             foreach (var s in stores)
             {
                 var sel = GetSavedFolderSelection(s.StoreId);
-                if (sel.Count == 0) skipped.Add(s.DisplayName);
+                if (sel.Count == 0) skipped.Add(s);
                 else plan.Add(new KeyValuePair<StoreInfo, List<FolderInfo>>(s, sel));
             }
             if (plan.Count == 0)
@@ -907,7 +907,7 @@ namespace PstSearchTool.UI
             }
 
             string skipMsg = skipped.Count > 0
-                ? "\n（已略過未選資料夾的存放區：" + string.Join("、", skipped) + "）"
+                ? "\n（已略過未選資料夾的存放區：" + string.Join("、", skipped.Select(x => x.DisplayName)) + "）"
                 : "";
             if (MessageBox.Show(this,
                 "開始建立/更新索引？（" + plan.Count + " 個存放區）" + skipMsg,
@@ -937,7 +937,15 @@ namespace PstSearchTool.UI
                     foreach (var kv in plan)
                     {
                         if (token.IsCancellationRequested) break;
+                        // 先移除「先前已索引、但本次未勾選」的資料夾，讓索引嚴格反映勾選狀態
+                        indexer.PurgeUnselected(kv.Key, new HashSet<string>(kv.Value.Select(f => f.Path)), () => token.IsCancellationRequested);
                         total += indexer.Run(kv.Key, kv.Value, rebuild, () => token.IsCancellationRequested);
+                    }
+                    // 未選資料夾的存放區：清掉其所有舊索引
+                    foreach (var s in skipped)
+                    {
+                        if (token.IsCancellationRequested) break;
+                        indexer.PurgeUnselected(s, new HashSet<string>(), () => token.IsCancellationRequested);
                     }
                 }
                 catch (Exception ex)

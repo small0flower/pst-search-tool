@@ -109,6 +109,36 @@ namespace PstSearchTool.Indexing
             return true;
         }
 
+        /// <summary>
+        /// 移除「先前已索引、但本次不再勾選」的資料夾索引資料，
+        /// 讓索引嚴格反映目前勾選的資料夾（含其子資料夾）。
+        /// selectedPaths：本次要保留的資料夾（空集合 = 全部清空）。
+        /// </summary>
+        public void PurgeUnselected(StoreInfo store, HashSet<string> selectedPaths, Func<bool> isCancelled)
+        {
+            try
+            {
+                if (selectedPaths == null) selectedPaths = new HashSet<string>();
+                foreach (string fp in _db.GetIndexedFolders(store.StoreId))
+                {
+                    if (isCancelled()) break;
+                    bool keep = false;
+                    foreach (string p in selectedPaths)
+                    {
+                        // 保留條件：fp 等於 p、fp 是 p 的子資料夾、或 fp 是 p 的上層資料夾
+                        if (fp == p || fp.StartsWith(p + "/") || p.StartsWith(fp + "/"))
+                        { keep = true; break; }
+                    }
+                    if (!keep)
+                    {
+                        _db.DeleteFolder(store.StoreId, fp);
+                        StatusChanged?.Invoke(fp, "已從索引移除（取消勾選）");
+                    }
+                }
+            }
+            catch { }
+        }
+
         private static string BuildSearchText(MailDoc doc)
         {
             return string.Join("\n",
