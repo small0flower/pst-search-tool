@@ -44,6 +44,16 @@ namespace PstSearchTool.UI
                     foreach (ColumnHeader col in lv.Columns)
                         col.Width = (int)Math.Round(col.Width * scale);
                 }
+                else if (c is TableLayoutPanel tlp)
+                {
+                    // 固定列高/欄寬也要等比放大，否則高 DPI 下內容會被裁切
+                    foreach (RowStyle rs in tlp.RowStyles)
+                        if (rs.SizeType == SizeType.Absolute)
+                            rs.Height = (int)Math.Round(rs.Height * scale);
+                    foreach (ColumnStyle cs in tlp.ColumnStyles)
+                        if (cs.SizeType == SizeType.Absolute)
+                            cs.Width = (int)Math.Round(cs.Width * scale);
+                }
                 else if (c is DataGridView g)
                 {
                     foreach (DataGridViewColumn col in g.Columns)

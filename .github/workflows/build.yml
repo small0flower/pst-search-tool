@@ -34,7 +34,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: PstSearchTool-v1.0.9
+          name: PstSearchTool-v1.0.10
           path: dist/
 
   # 在真實 Windows 上執行程式、擷取應用程式視窗畫面，commit 回 repo（公開 repo 可直接抓取檢視）
@@ -56,7 +56,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force screenshots | Out-Null
           $app = Resolve-Path 'src/PstSearch/bin/Release/net48/PstSearchTool.exe'
-          $p = Start-Process $app -ArgumentList '--uitest' -PassThru
+          $p = Start-Process $app -ArgumentList @('--uitest', '--dpi150') -PassThru
           Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class W { [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h); [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr h, out R r); [StructLayout(LayoutKind.Sequential)] public struct R { public int L, T, Rt, B; } }'
           Start-Sleep -Seconds 6
           $p.Refresh()

@@ -68,7 +68,7 @@ namespace PstSearchTool.UI
         public MainForm()
         {
             StartupLog.Log("MainForm 建構開始");
-            _dpiScale = UiScale.Factor(this);
+            _dpiScale = IsDpi150Test() ? 1.5f : UiScale.Factor(this);
             Font = new Font("Microsoft JhengHei", 9.5f * _dpiScale);
             Size = UiScale.ScaleSize(new Size(1180, 760), _dpiScale);
             MinimumSize = UiScale.ScaleSize(new Size(940, 620), _dpiScale);
@@ -403,6 +403,18 @@ namespace PstSearchTool.UI
             {
                 foreach (string a in Environment.GetCommandLineArgs())
                     if (a == "--uitest") return true;
+            }
+            catch { }
+            return false;
+        }
+
+        /// <summary>CI 模擬 150% 縮放：強制 DPI 係數 1.5，驗證縮放後版面。</summary>
+        private static bool IsDpi150Test()
+        {
+            try
+            {
+                foreach (string a in Environment.GetCommandLineArgs())
+                    if (a == "--dpi150") return true;
             }
             catch { }
             return false;
