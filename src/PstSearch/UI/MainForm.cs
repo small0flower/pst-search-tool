@@ -60,6 +60,8 @@ namespace PstSearchTool.UI
         private SplitContainer _sc;
         private float _dpiScale = 1f;
         private Panel _pnlSearch;
+        private Button _btnStats;
+        private Button _btnExport;
         private Panel _pnlBottom;
         private Button _btnDiag;
         private MenuStrip _menu;
@@ -174,6 +176,8 @@ namespace PstSearchTool.UI
             var lblFolderF = new Label { Text = "資料夾：", AutoSize = true, Margin = sm };
             _cmbFolderFilter = new ComboBox { Width = 160, DropDownStyle = ComboBoxStyle.DropDownList, Margin = sm };
             _cmbFolderFilter.Items.AddRange(new object[] { "全部資料夾", "收件匣", "寄件匣", "自訂（左側勾選）" });
+            _btnStats = new Button { Text = "統計", Width = 70, Margin = sm };
+            _btnExport = new Button { Text = "匯出 CSV", Width = 90, Margin = sm };
 
             pnlSearch.Controls.Add(lblKw);
             pnlSearch.Controls.Add(_txtKeyword);
@@ -189,6 +193,8 @@ namespace PstSearchTool.UI
             pnlSearch.Controls.Add(_txtSender);
             pnlSearch.Controls.Add(lblFolderF);
             pnlSearch.Controls.Add(_cmbFolderFilter);
+            pnlSearch.Controls.Add(_btnStats);
+            pnlSearch.Controls.Add(_btnExport);
 
             var pnlBottom = new Panel { Height = 44 };
             _pnlBottom = pnlBottom;
@@ -217,7 +223,8 @@ namespace PstSearchTool.UI
             var c3 = new DataGridViewTextBoxColumn { HeaderText = "資料夾", Width = 130, SortMode = DataGridViewColumnSortMode.Automatic };
             var c4 = new DataGridViewTextBoxColumn { HeaderText = "摘要", Width = 320, SortMode = DataGridViewColumnSortMode.NotSortable };
             var c5 = new DataGridViewTextBoxColumn { HeaderText = "存放區", Width = 90, SortMode = DataGridViewColumnSortMode.NotSortable };
-            _grid.Columns.AddRange(new DataGridViewColumn[] { c0, c1, c2, c3, c4, c5 });
+            var c6 = new DataGridViewTextBoxColumn { HeaderText = "附件", Width = 120, SortMode = DataGridViewColumnSortMode.NotSortable };
+            _grid.Columns.AddRange(new DataGridViewColumn[] { c0, c1, c2, c3, c4, c5, c6 });
 
             // 加入 Panel2（位置由 LayoutRightPanel 統一安排）
             _sc.Panel2.Controls.Add(pnlSearch);
@@ -269,6 +276,8 @@ namespace PstSearchTool.UI
             _btnRebuild.Click += (s, e) => StartIndex(true);
             _btnCancel.Click += (s, e) => { try { _cts?.Cancel(); } catch { } _lblStatus.Text = "正在取消…"; };
             _btnSearch.Click += (s, e) => DoSearch();
+            _btnStats.Click += (s, e) => ShowStats();
+            _btnExport.Click += (s, e) => ExportCsv();
             _btnClearSearch.Click += (s, e) =>
             {
                 _txtKeyword.Clear();
@@ -1027,6 +1036,7 @@ namespace PstSearchTool.UI
                 row.Cells[3].Value = r.FolderPath;
                 row.Cells[4].Value = r.Snippet;
                 row.Cells[5].Value = r.StoreName;
+                row.Cells[6].Value = r.Attachments;
                 row.Tag = r;
             }
             _lblStatus.Text = "找到 " + results.Count + " 筆" + (results.Count >= 500 ? "（已達顯示上限 500 筆）" : "") + "。雙擊即可於 Outlook 開啟。";
@@ -1045,6 +1055,66 @@ namespace PstSearchTool.UI
                 catch (Exception ex) { Ui(() => Err("無法開啟郵件：" + ex.Message)); }
                 finally { Ui(() => SetBusy(false, "就緒")); }
             });
+        }
+
+        // ------------------------------------------------------------------ V2：統計 / 匯出
+        private void ShowStats()
+        {
+            if (_db == null) { Err("索引資料庫不可用。"); return; }
+            SetBusy(true, "計算統計…");
+            var db = _db;
+            Task.Run(() =>
+            {
+                try
+                {
+                    var stats = db.GetStats();
+                    if (stats.Total <= 0) { Ui(() => { Err("尚未建立索引，無統計資料。"); SetBusy(false, "就緒"); }); return; }
+                    Ui(() => { SetBusy(false, ""); using (var d = new UI.StatsDialog(stats)) d.ShowDialog(this); });
+                }
+                catch (Exception ex)
+                {
+                    Ui(() => { Err("統計失敗：" + ex.Message); SetBusy(false, "就緒"); });
+                }
+            });
+        }
+
+        private void ExportCsv()
+        {
+            if (_grid.Rows.Count == 0) { Err("目前沒有可匯出的搜尋結果（請先搜尋）。"); return; }
+            using (var dlg = new SaveFileDialog())
+            {
+                dlg.Title = "匯出搜尋結果";
+                dlg.Filter = "CSV 檔 (*.csv)|*.csv|所有檔案 (*.*)|*.*";
+                dlg.FileName = "PstSearch結果_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".csv";
+                if (dlg.ShowDialog(this) != DialogResult.OK) return;
+                try
+                {
+                    var sb = new System.Text.StringBuilder();
+                    sb.AppendLine("日期,寄件者,寄件者Email,主旨,資料夾,存放區,附件,摘要");
+                    foreach (DataGridViewRow row in _grid.Rows)
+                    {
+                        var it = row.Tag as SearchResultItem;
+                        if (it == null) continue;
+                        sb.AppendLine(string.Join(",",
+                            Csv(it.ReceivedTime), Csv(it.FromName), Csv(it.FromEmail),
+                            Csv(it.Subject), Csv(it.FolderPath), Csv(it.StoreName),
+                            Csv(it.Attachments), Csv(it.Snippet)));
+                    }
+                    System.IO.File.WriteAllText(dlg.FileName, sb.ToString(), new System.Text.UTF8Encoding(true));
+                    MessageBox.Show(this, "已匯出 " + _grid.Rows.Count + " 列至：\n" + dlg.FileName, "匯出", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch (Exception ex) { Err("匯出失敗：" + ex.Message); }
+            }
+        }
+
+        /// <summary>CSV 欄位脫逸（含逗號/引號/換行時以雙引號包裹）。</summary>
+        private static string Csv(string s)
+        {
+            if (s == null) return "";
+            s = s.Replace("\"", "\"\"");
+            if (s.Contains(",") || s.Contains("\"") || s.Contains("\n") || s.Contains("\r"))
+                return "\"" + s + "\"";
+            return s;
         }
 
         // ------------------------------------------------------------------ 工具
@@ -1082,6 +1152,8 @@ namespace PstSearchTool.UI
             _dtTo.Enabled = !busy;
             _cmbFolderFilter.Enabled = !busy;
             _btnClearSearch.Enabled = !busy;
+            _btnStats.Enabled = !busy;
+            _btnExport.Enabled = !busy;
             if (!string.IsNullOrEmpty(status)) _lblStatus.Text = status;
             if (!busy) { _progress.Style = ProgressBarStyle.Blocks; _progress.Value = 0; }
         }

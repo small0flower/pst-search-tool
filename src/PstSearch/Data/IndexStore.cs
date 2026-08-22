@@ -83,6 +83,7 @@ CREATE TABLE IF NOT EXISTS messages(
   received_time TEXT,
   entry_id TEXT NOT NULL,
   body TEXT,
+  attachments TEXT,
   search_text TEXT,
   indexed_at TEXT
 );
@@ -107,6 +108,16 @@ CREATE TABLE IF NOT EXISTS folder_snapshots(
 );";
                 cmd.ExecuteNonQuery();
             }
+            // 遷移：為既有資料庫補上 attachments 欄位（V2 附件檔名索引）
+            try
+            {
+                using (var cmd = _conn.CreateCommand())
+                {
+                    cmd.CommandText = "ALTER TABLE messages ADD COLUMN attachments TEXT";
+                    cmd.ExecuteNonQuery();
+                }
+            }
+            catch { /* 欄位已存在則忽略 */ }
         }
 
         public void BeginTransaction()
@@ -151,12 +162,12 @@ CREATE TABLE IF NOT EXISTS folder_snapshots(
                 {
                     cmd.Transaction = _tx;
                     cmd.CommandText = @"
-INSERT INTO messages(store_id, store_name, pst_path, folder_path, folder_kind, subject, from_name, from_email, to_list, cc_list, received_time, entry_id, body, search_text, indexed_at)
-VALUES(@s, @sn, @p, @f, @k, @sub, @fn, @fe, @to, @cc, @t, @e, @b, @st, @ia)
+INSERT INTO messages(store_id, store_name, pst_path, folder_path, folder_kind, subject, from_name, from_email, to_list, cc_list, received_time, entry_id, body, attachments, search_text, indexed_at)
+VALUES(@s, @sn, @p, @f, @k, @sub, @fn, @fe, @to, @cc, @t, @e, @b, @at, @st, @ia)
 ON CONFLICT(store_id, entry_id) DO UPDATE SET
  store_name=@sn, pst_path=@p, folder_path=@f, folder_kind=@k, subject=@sub,
  from_name=@fn, from_email=@fe, to_list=@to, cc_list=@cc, received_time=@t,
- body=@b, search_text=@st, indexed_at=@ia";
+ body=@b, attachments=@at, search_text=@st, indexed_at=@ia";
                     cmd.Parameters.AddWithValue("@s", doc.StoreId ?? "");
                     cmd.Parameters.AddWithValue("@sn", doc.StoreName ?? "");
                     cmd.Parameters.AddWithValue("@p", doc.PstPath ?? "");
@@ -170,6 +181,7 @@ ON CONFLICT(store_id, entry_id) DO UPDATE SET
                     cmd.Parameters.AddWithValue("@t", doc.ReceivedTime ?? "");
                     cmd.Parameters.AddWithValue("@e", doc.EntryId ?? "");
                     cmd.Parameters.AddWithValue("@b", doc.Body ?? "");
+                    cmd.Parameters.AddWithValue("@at", doc.Attachments ?? "");
                     cmd.Parameters.AddWithValue("@st", doc.SearchText ?? "");
                     cmd.Parameters.AddWithValue("@ia", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
                     cmd.ExecuteNonQuery();
@@ -345,6 +357,37 @@ ON CONFLICT(store_id, folder_path) DO UPDATE SET
             }
         }
 
+        /// <summary>統計：寄件者 Top20、依資料夾、依月份。</summary>
+        public StatsResult GetStats()
+        {
+            lock (_sync)
+            {
+                var res = new StatsResult();
+                using (var cmd = _conn.CreateCommand())
+                {
+                    cmd.CommandText = "SELECT COUNT(*) FROM messages";
+                    res.Total = Convert.ToInt64(cmd.ExecuteScalar());
+                }
+                Action<string, List<KeyValuePair<string, long>>> query = (sql, target) =>
+                {
+                    using (var cmd = _conn.CreateCommand())
+                    {
+                        cmd.CommandText = sql;
+                        using (var r = cmd.ExecuteReader())
+                            while (r.Read())
+                                target.Add(new KeyValuePair<string, long>(r.GetString(0), r.GetInt64(1)));
+                    }
+                };
+                if (res.Total > 0)
+                {
+                    query("SELECT from_email, COUNT(*) FROM messages WHERE from_email <> '' GROUP BY from_email ORDER BY COUNT(*) DESC LIMIT 20", res.TopSenders);
+                    query("SELECT folder_path, COUNT(*) FROM messages GROUP BY folder_path ORDER BY COUNT(*) DESC", res.FolderCounts);
+                    query("SELECT substr(received_time,1,7), COUNT(*) FROM messages WHERE received_time <> '' GROUP BY substr(received_time,1,7) ORDER BY substr(received_time,1,7)", res.MonthCounts);
+                }
+                return res;
+            }
+        }
+
         /// <summary>
         /// 全文搜尋。
         /// 關鍵字：CJK 2 字元走 bigram、3 字元以上走 trigram（精確子字串）；英文整詞不分大小寫；
@@ -357,7 +400,7 @@ ON CONFLICT(store_id, folder_path) DO UPDATE SET
             lock (_sync)
             {
                 var sb = new StringBuilder();
-                sb.Append(@"SELECT m.id, m.store_name, m.folder_path, m.subject, m.from_name, m.from_email, m.to_list, m.received_time, m.entry_id, m.store_id, substr(m.body, 1, 20000)
+                sb.Append(@"SELECT m.id, m.store_name, m.folder_path, m.subject, m.from_name, m.from_email, m.to_list, m.received_time, m.entry_id, m.store_id, substr(m.body, 1, 20000), m.attachments
 FROM messages m ");
 
                 var pars = new List<SQLiteParameter>();
@@ -473,7 +516,8 @@ FROM messages m ");
                                 ReceivedTime = r.IsDBNull(7) ? "" : r.GetString(7),
                                 EntryId = r.IsDBNull(8) ? "" : r.GetString(8),
                                 StoreId = r.IsDBNull(9) ? "" : r.GetString(9),
-                                Body = r.IsDBNull(10) ? "" : r.GetString(10)
+                                Body = r.IsDBNull(10) ? "" : r.GetString(10),
+                                Attachments = r.IsDBNull(11) ? "" : r.GetString(11)
                             });
                         }
                     }

@@ -143,7 +143,8 @@ namespace PstSearchTool.Indexing
         {
             return string.Join("\n",
                 doc.Subject ?? "", doc.FromName ?? "", doc.FromEmail ?? "",
-                doc.ToList ?? "", doc.CcList ?? "", doc.Body ?? "");
+                doc.ToList ?? "", doc.CcList ?? "", doc.Body ?? "",
+                doc.Attachments ?? "");
         }
 
         private static long FileSize(string path)

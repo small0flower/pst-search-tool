@@ -44,6 +44,7 @@ namespace PstSearchTool.Models
         public string ReceivedTime;   // yyyy-MM-dd HH:mm:ss
         public string EntryId;
         public string Body;
+        public string Attachments;    // 附件檔名（以 ; 分隔）
         public string SearchText;     // 供倒排索引使用的合併文字
     }
 
@@ -61,6 +62,16 @@ namespace PstSearchTool.Models
         public string EntryId;
         public string StoreId;
         public string Body;           // 已截斷（僅供摘要）
+        public string Attachments;    // 附件檔名
         public string Snippet;
+    }
+
+    /// <summary>統計結果。</summary>
+    public class StatsResult
+    {
+        public long Total;
+        public List<KeyValuePair<string, long>> TopSenders = new List<KeyValuePair<string, long>>();
+        public List<KeyValuePair<string, long>> FolderCounts = new List<KeyValuePair<string, long>>();
+        public List<KeyValuePair<string, long>> MonthCounts = new List<KeyValuePair<string, long>>();
     }
 }

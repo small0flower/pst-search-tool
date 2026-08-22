@@ -1,7 +1,7 @@
 ; Outlook PST 搜尋工具 — Inno Setup 安裝腳本（Inno Setup 6）
 ; 編譯：ISCC.exe installer.iss（於 build 目錄執行；成品輸出到 ..\dist）
 #define MyAppName "Outlook PST 搜尋工具"
-#define MyAppVersion "1.0.13"
+#define MyAppVersion "1.1.0"
 #define MyAppPublisher "PstSearchTool"
 #define MyAppExeName "PstSearchTool.exe"
 

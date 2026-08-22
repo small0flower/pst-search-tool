@@ -314,12 +314,41 @@ namespace PstSearchTool.Outlook
                     FromEmail = ReadProp(item, SenderEmailTags),
                     ToList = ReadProp(item, ToTags),
                     CcList = ReadProp(item, CcTags),
-                    Body = ComUtil.SafeStr(item.Body)
+                    Body = ComUtil.SafeStr(item.Body),
+                    Attachments = ReadAttachmentNames(item)
                 };
                 if (string.IsNullOrEmpty(doc.ReceivedTime)) doc.ReceivedTime = ComUtil.SafeDate(item.SentOn);
                 return doc;
             }
             catch { return null; }
+        }
+
+        /// <summary>讀取附件檔名（以 ; 分隔）。透過 Attachments 集合，不會觸發安全性警告。</summary>
+        private static string ReadAttachmentNames(dynamic item)
+        {
+            try
+            {
+                dynamic ats = item.Attachments;
+                if (ats == null) return "";
+                int n = Convert.ToInt32(ats.Count);
+                if (n <= 0) return "";
+                var names = new List<string>();
+                for (int i = 1; i <= n; i++)
+                {
+                    dynamic a = null;
+                    try
+                    {
+                        a = ats[i];
+                        string fn = ComUtil.SafeStr(a.FileName);
+                        if (string.IsNullOrWhiteSpace(fn)) fn = ComUtil.SafeStr(a.DisplayName);
+                        if (!string.IsNullOrWhiteSpace(fn)) names.Add(fn);
+                    }
+                    catch { }
+                    finally { ComUtil.Release(a); }
+                }
+                return string.Join("; ", names);
+            }
+            catch { return ""; }
         }
 
         /// <summary>依序嘗試多個 MAPI proptag，回傳第一個非空值（避免 OM Guard 警告）。</summary>
