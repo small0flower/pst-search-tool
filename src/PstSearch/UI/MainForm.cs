@@ -147,56 +147,48 @@ namespace PstSearchTool.UI
             // 搜尋區採固定高度表格排版（TableLayoutPanel）：4 列固定列高，欄位放入指定格子。
             // 注意：三個區塊不依賴 Dock 排版（實測在部分環境 Dock=Top 面板會消失），
             // 改用 LayoutRightPanel() 手動指定位置（見 Resize 事件）。
-            var pnlSearch = new TableLayoutPanel
+            // 搜尋區採流式排版（FlowLayoutPanel）：控制項自動排列/換行，日期三件組自然相鄰，
+            // 任何 DPI 縮放下都不會出現欄位消失或間距異常。
+            var pnlSearch = new FlowLayoutPanel
             {
-                Height = 124,
-                ColumnCount = 4,
-                RowCount = 4,
-                Padding = new Padding(8, 4, 8, 2)
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = true,
+                Padding = new Padding(8, 6, 8, 4)
             };
-            pnlSearch.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
-            pnlSearch.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
-            pnlSearch.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
-            pnlSearch.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
-            pnlSearch.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-            pnlSearch.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            pnlSearch.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-            pnlSearch.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            pnlSearch.MinimumSize = new Size(0, 60);
             _pnlSearch = pnlSearch;
 
-            var lblKw = new Label { Text = "4. 搜尋條件", AutoSize = true, Font = new Font(Font, FontStyle.Bold), Margin = new Padding(4, 4, 8, 0) };
-            _txtKeyword = new TextBox { Width = 380, Anchor = AnchorStyles.Left | AnchorStyles.Right, Margin = new Padding(4, 4, 8, 0) };
-            _btnSearch = new Button { Text = "搜尋", Width = 90, Margin = new Padding(4, 3, 8, 0) };
-            _btnClearSearch = new Button { Text = "清除", Width = 70, Margin = new Padding(0, 3, 8, 0) };
-            _chkDate = new CheckBox { Text = "日期：", AutoSize = true, Margin = new Padding(4, 4, 8, 0) };
-            _dtFrom = new DateTimePicker { Width = 145, Format = DateTimePickerFormat.Custom, CustomFormat = "yyyy/MM/dd", Margin = new Padding(4, 3, 8, 0) };
-            var lblDash = new Label { Text = "～", AutoSize = true, Margin = new Padding(0, 4, 8, 0) };
-            _dtTo = new DateTimePicker { Width = 145, Format = DateTimePickerFormat.Custom, CustomFormat = "yyyy/MM/dd", Margin = new Padding(0, 3, 8, 0) };
-            var lblSender = new Label { Text = "寄件者：", AutoSize = true, Margin = new Padding(4, 4, 8, 0) };
-            _txtSender = new TextBox { Width = 240, Anchor = AnchorStyles.Left | AnchorStyles.Right, Margin = new Padding(4, 4, 8, 0) };
-            var lblFolderF = new Label { Text = "資料夾：", AutoSize = true, Margin = new Padding(4, 4, 8, 0) };
-            _cmbFolderFilter = new ComboBox { Width = 160, DropDownStyle = ComboBoxStyle.DropDownList, Margin = new Padding(0, 4, 8, 0) };
+            var sm = new Padding(4, 6, 6, 0);
+            var lblKw = new Label { Text = "4. 搜尋條件", AutoSize = true, Font = new Font(Font, FontStyle.Bold), Margin = sm };
+            _txtKeyword = new TextBox { Width = 380, Margin = sm };
+            _btnSearch = new Button { Text = "搜尋", Width = 90, Margin = sm };
+            _btnClearSearch = new Button { Text = "清除", Width = 70, Margin = sm };
+            _chkDate = new CheckBox { Text = "日期：", AutoSize = true, Margin = sm };
+            _dtFrom = new DateTimePicker { Width = 145, Format = DateTimePickerFormat.Custom, CustomFormat = "yyyy/MM/dd", Margin = sm };
+            var lblDash = new Label { Text = "～", AutoSize = true, Margin = sm };
+            _dtTo = new DateTimePicker { Width = 145, Format = DateTimePickerFormat.Custom, CustomFormat = "yyyy/MM/dd", Margin = sm };
+            var lblSender = new Label { Text = "寄件者：", AutoSize = true, Margin = sm };
+            _txtSender = new TextBox { Width = 240, Margin = sm };
+            var lblFolderF = new Label { Text = "資料夾：", AutoSize = true, Margin = sm };
+            _cmbFolderFilter = new ComboBox { Width = 160, DropDownStyle = ComboBoxStyle.DropDownList, Margin = sm };
             _cmbFolderFilter.Items.AddRange(new object[] { "全部資料夾", "收件匣", "寄件匣", "自訂（左側勾選）" });
 
-            pnlSearch.Controls.Add(lblKw, 0, 0);
-            pnlSearch.SetColumnSpan(lblKw, 4);
-            pnlSearch.Controls.Add(_txtKeyword, 1, 1);
-            pnlSearch.Controls.Add(_btnSearch, 2, 1);
-            pnlSearch.Controls.Add(_btnClearSearch, 3, 1);
-            pnlSearch.Controls.Add(_chkDate, 0, 2);
-            // 日期三件組（起始＋～＋結束）放同一格，避免被表格欄寬撐開造成間距過大
-            var dateRow = new Panel { Height = 30, Width = 330, Margin = new Padding(4, 3, 8, 0) };
-            _dtFrom.SetBounds(0, 0, 145, 23);
-            lblDash.SetBounds(150, 4, 20, 16);
-            _dtTo.SetBounds(172, 0, 145, 23);
-            dateRow.Controls.Add(_dtFrom);
-            dateRow.Controls.Add(lblDash);
-            dateRow.Controls.Add(_dtTo);
-            pnlSearch.Controls.Add(dateRow, 1, 2);
-            pnlSearch.Controls.Add(lblSender, 0, 3);
-            pnlSearch.Controls.Add(_txtSender, 1, 3);
-            pnlSearch.Controls.Add(lblFolderF, 2, 3);
-            pnlSearch.Controls.Add(_cmbFolderFilter, 3, 3);
+            pnlSearch.Controls.Add(lblKw);
+            pnlSearch.Controls.Add(_txtKeyword);
+            pnlSearch.Controls.Add(_btnSearch);
+            pnlSearch.Controls.Add(_btnClearSearch);
+            pnlSearch.SetFlowBreak(_btnClearSearch, true); // 日期列換行
+            pnlSearch.Controls.Add(_chkDate);
+            pnlSearch.Controls.Add(_dtFrom);
+            pnlSearch.Controls.Add(lblDash);
+            pnlSearch.Controls.Add(_dtTo);
+            pnlSearch.SetFlowBreak(_dtTo, true);           // 寄件者列換行
+            pnlSearch.Controls.Add(lblSender);
+            pnlSearch.Controls.Add(_txtSender);
+            pnlSearch.Controls.Add(lblFolderF);
+            pnlSearch.Controls.Add(_cmbFolderFilter);
 
             var pnlBottom = new Panel { Height = 44 };
             _pnlBottom = pnlBottom;
