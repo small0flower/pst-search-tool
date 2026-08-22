@@ -9,7 +9,7 @@
     <LangVersion>7.3</LangVersion>
     <AssemblyName>PstSearchTool</AssemblyName>
     <RootNamespace>PstSearchTool</RootNamespace>
-    <Version>1.0.10</Version>
+    <Version>1.0.11</Version>
     <Product>Outlook PST 搜尋工具</Product>
     <Description>Outlook 2007 於 Windows 10/11 搜尋失效的外部替代搜尋工具</Description>
     <ApplicationManifest>app.manifest</ApplicationManifest>

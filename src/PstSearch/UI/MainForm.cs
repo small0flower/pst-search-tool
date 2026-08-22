@@ -162,7 +162,7 @@ namespace PstSearchTool.UI
 
             var sm = new Padding(4, 6, 6, 0);
             var lblKw = new Label { Text = "4. 搜尋條件", AutoSize = true, Font = new Font(Font, FontStyle.Bold), Margin = sm };
-            _txtKeyword = new TextBox { Width = 380, Margin = sm };
+            _txtKeyword = new TextBox { Width = 300, Margin = sm };
             _btnSearch = new Button { Text = "搜尋", Width = 90, Margin = sm };
             _btnClearSearch = new Button { Text = "清除", Width = 70, Margin = sm };
             _chkDate = new CheckBox { Text = "日期：", AutoSize = true, Margin = sm };
