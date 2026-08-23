@@ -1,0 +1,18 @@
+Panel2: 780x503 client=780x503
+搜尋列面板: FlowLayoutPanel bounds={X=0,Y=0,Width=1028,Height=132} visible=True enabled=True parent=SplitterPanel
+表格: DataGridView bounds={X=0,Y=132,Width=780,Height=305} visible=True
+底列: Panel bounds={X=0,Y=437,Width=780,Height=66} visible=True
+  子控制項: Label bounds={X=12,Y=12,Width=69,Height=16} visible=True enabled=True text="4. 搜寻条件"
+  子控制項: TextBox bounds={X=91,Y=12,Width=450,Height=23} visible=True enabled=True text=""
+  子控制項: Button bounds={X=551,Y=12,Width=135,Height=34} visible=True enabled=True text="搜寻"
+  子控制項: Button bounds={X=696,Y=12,Width=105,Height=34} visible=True enabled=True text="清除"
+  子控制項: CheckBox bounds={X=12,Y=52,Width=63,Height=20} visible=True enabled=True text="日期："
+  子控制項: DateTimePicker bounds={X=85,Y=52,Width=218,Height=23} visible=True enabled=True text="2026/05/23"
+  子控制項: Label bounds={X=313,Y=52,Width=20,Height=16} visible=True enabled=True text="～"
+  子控制項: DateTimePicker bounds={X=343,Y=52,Width=218,Height=23} visible=True enabled=True text="2026/08/23"
+  子控制項: Label bounds={X=12,Y=92,Width=56,Height=16} visible=True enabled=True text="寄件者："
+  子控制項: TextBox bounds={X=78,Y=92,Width=360,Height=23} visible=True enabled=True text=""
+  子控制項: Label bounds={X=448,Y=92,Width=56,Height=16} visible=True enabled=True text="资料夹："
+  子控制項: ComboBox bounds={X=514,Y=92,Width=240,Height=24} visible=True enabled=True text="全部资料夹"
+  子控制項: Button bounds={X=764,Y=92,Width=105,Height=34} visible=True enabled=True text="统计"
+  子控制項: Button bounds={X=879,Y=92,Width=135,Height=34} visible=True enabled=True text="汇出 CSV"
