@@ -33,6 +33,9 @@ namespace PstSearchTool.Config
 
         public bool HintShown;
 
+        /// <summary>介面語言："zh-TW"（繁體） / "zh-CN"（簡體）。</summary>
+        public string Language = "zh-TW";
+
         public string DbPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "PstSearchTool", "index.db");

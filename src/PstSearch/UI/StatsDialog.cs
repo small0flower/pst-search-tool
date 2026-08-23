@@ -41,6 +41,7 @@ namespace PstSearchTool.UI
             AcceptButton = ok;
             CancelButton = ok;
             UiScale.ScaleTree(this, s);
+            Lang.Apply(this);
         }
 
         private void AddGroup(string title, int left, int top, List<KeyValuePair<string, long>> data)

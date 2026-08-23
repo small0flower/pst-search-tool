@@ -74,7 +74,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force screenshots | Out-Null
           $app = Resolve-Path 'src/PstSearch/bin/Release/net48/PstSearchTool.exe'
-          $p = Start-Process $app -ArgumentList @('--uitest', '--dpi150') -PassThru
+          $p = Start-Process $app -ArgumentList @('--uitest', '--dpi150', 'zhcn') -PassThru
           Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class W { [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h); [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr h, out R r); [StructLayout(LayoutKind.Sequential)] public struct R { public int L, T, Rt, B; } }'
           Start-Sleep -Seconds 6
           $p.Refresh()

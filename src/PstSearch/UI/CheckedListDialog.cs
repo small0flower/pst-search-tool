@@ -75,6 +75,7 @@ namespace PstSearchTool.UI
             Controls.Add(ok);
             Controls.Add(cancel);
             UiScale.ScaleTree(this, s);
+            Lang.Apply(this);
             AcceptButton = ok;
             CancelButton = cancel;
         }

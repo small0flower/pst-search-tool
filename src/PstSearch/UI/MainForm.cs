@@ -70,6 +70,7 @@ namespace PstSearchTool.UI
         public MainForm()
         {
             StartupLog.Log("MainForm 建構開始");
+            Lang.Simplified = IsZhCnTest() || (_settings.Language == "zh-CN");
             // 套用程式圖示到視窗標題列
             try { Icon = System.Drawing.Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
             _dpiScale = IsDpi150Test() ? 1.5f : UiScale.Factor(this);
@@ -244,6 +245,7 @@ namespace PstSearchTool.UI
             var mRefresh = new ToolStripMenuItem("重新整理來源");
             mRefresh.Click += (s, e) => RefreshStores();
             mTools.DropDownItems.Add(mRefresh);
+            LanguageMenu(mTools);
             var mHelp = new ToolStripMenuItem("說明");
             var mAbout = new ToolStripMenuItem("關於");
             mAbout.Click += (s, e) => ShowAbout();
@@ -360,7 +362,10 @@ namespace PstSearchTool.UI
                 if (DateTime.TryParse(_settings.DateTo, out dt) && dt != DateTime.MinValue) _dtTo.Value = dt;
                 else _dtTo.Value = DateTime.Today;
 
-                if (_db != null) _lblStatus.Text = "已索引 " + _db.CountMessages() + " 封郵件。";
+                if (_db != null) _lblStatus.Text = Lang.T("已索引 " + _db.CountMessages() + " 封郵件。");
+
+                // 套用簡體（若設定為簡體）：集中轉換介面鍍鉻（不轉資料控制項）
+                Lang.Apply(this);
 
                 StartupLog.Log("OnLoad 完成");
             }
@@ -418,6 +423,18 @@ namespace PstSearchTool.UI
             {
                 foreach (string a in Environment.GetCommandLineArgs())
                     if (a == "--dpi150") return true;
+            }
+            catch { }
+            return false;
+        }
+
+        /// <summary>CI 簡體測試：以簡體介面啟動。</summary>
+        private static bool IsZhCnTest()
+        {
+            try
+            {
+                foreach (string a in Environment.GetCommandLineArgs())
+                    if (a == "zhcn") return true;
             }
             catch { }
             return false;
@@ -490,8 +507,28 @@ namespace PstSearchTool.UI
             }
         }
 
-        private void OnFormClosing(object sender, FormClosingEventArgs e)
+        /// <summary>在「工具」選單加入語言子選單（繁/簡）。</summary>
+        private void LanguageMenu(ToolStripMenuItem parent)
         {
+            var mLang = new ToolStripMenuItem("語言");
+            var mZhTw = new ToolStripMenuItem("繁體中文");
+            var mZhCn = new ToolStripMenuItem("简体中文");
+            mZhTw.Click += (s, e) => SetLanguage("zh-TW");
+            mZhCn.Click += (s, e) => SetLanguage("zh-CN");
+            mLang.DropDownItems.Add(mZhTw);
+            mLang.DropDownItems.Add(mZhCn);
+            parent.DropDownItems.Add(mLang);
+        }
+
+        private void SetLanguage(string code)
+        {
+            if (_settings.Language == code) return;
+            _settings.Language = code;
+            Settings.Save(_settings);
+            MessageBox.Show(this, Lang.T("已切換語言。請重新啟動程式以套用。"), Lang.T("語言"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void OnFormClosing(object sender, FormClosingEventArgs e)        {
             StartupLog.Log("程式關閉中");
             SaveCurrentTreeChecks();
             _settings.LastKeyword = _txtKeyword.Text;
@@ -1173,7 +1210,7 @@ namespace PstSearchTool.UI
 
         private void Err(string text)
         {
-            MessageBox.Show(this, text, "錯誤", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(this, Lang.T(text), Lang.T("錯誤"), MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 }
