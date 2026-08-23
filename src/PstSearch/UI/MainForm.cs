@@ -70,6 +70,8 @@ namespace PstSearchTool.UI
         public MainForm()
         {
             StartupLog.Log("MainForm 建構開始");
+            // 套用程式圖示到視窗標題列
+            try { Icon = System.Drawing.Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
             _dpiScale = IsDpi150Test() ? 1.5f : UiScale.Factor(this);
             Font = new Font("Microsoft JhengHei", 9.5f * _dpiScale);
             Size = UiScale.ScaleSize(new Size(1180, 760), _dpiScale);

@@ -1,7 +1,7 @@
 ; Outlook PST 搜尋工具 — Inno Setup 安裝腳本（Inno Setup 6）
 ; 編譯：ISCC.exe installer.iss（於 build 目錄執行；成品輸出到 ..\dist）
 #define MyAppName "Outlook PST 搜尋工具"
-#define MyAppVersion "1.1.0"
+#define MyAppVersion "1.1.1"
 #define MyAppPublisher "PstSearchTool"
 #define MyAppExeName "PstSearchTool.exe"
 
@@ -20,6 +20,7 @@ Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
 UninstallDisplayIcon={app}\{#MyAppExeName}
+SetupIconFile=..\src\PstSearch\app.ico
 
 [Files]
 Source: "..\dist\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
