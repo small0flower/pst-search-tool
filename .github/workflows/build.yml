@@ -39,11 +39,15 @@ jobs:
           $v = Select-String -Path 'src/PstSearch/PstSearch.csproj' -Pattern '<Version>(.*?)</Version>' | ForEach-Object { $_.Matches[0].Groups[1].Value }
           echo "version=$v" | Out-File -Encoding utf8 $env:GITHUB_OUTPUT
 
-      - name: Create/Update GitHub Release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release create "v${{ steps.ver.outputs.version }}" "dist/PstSearchTool-Setup-${{ steps.ver.outputs.version }}.exe" --title "PstSearchTool v${{ steps.ver.outputs.version }}" --notes "Outlook PST 搜尋工具（.NET 4.8，相容 Windows 7 SP1/10/11）。下載安裝程式並執行即可安裝。" --repo small0flower/pst-search-tool --force
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.ver.outputs.version }}
+          name: PstSearchTool v${{ steps.ver.outputs.version }}
+          body: |
+            Outlook PST 搜尋工具（.NET 4.8，相容 Windows 7 SP1 / 10 / 11）。
+            下載安裝程式並執行即可安裝。
+          files: dist/PstSearchTool-Setup-${{ steps.ver.outputs.version }}.exe
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
