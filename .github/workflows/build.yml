@@ -8,6 +8,8 @@ on:
 jobs:
   build:
     runs-on: windows-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -30,6 +32,18 @@ jobs:
         run: |
           $iscc = 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
           & $iscc 'build\installer.iss'
+
+      - name: Extract version
+        id: ver
+        run: |
+          $v = Select-String -Path 'src/PstSearch/PstSearch.csproj' -Pattern '<Version>(.*?)</Version>' | ForEach-Object { $_.Matches[0].Groups[1].Value }
+          echo "version=$v" | Out-File -Encoding utf8 $env:GITHUB_OUTPUT
+
+      - name: Create/Update GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v${{ steps.ver.outputs.version }}" "dist/PstSearchTool-Setup-${{ steps.ver.outputs.version }}.exe" --title "PstSearchTool v${{ steps.ver.outputs.version }}" --notes "Outlook PST 搜尋工具（.NET 4.8，相容 Windows 7 SP1/10/11）。下載安裝程式並執行即可安裝。" --repo small0flower/pst-search-tool --force
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
